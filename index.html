@@ -257,7 +257,7 @@
       .add-button:hover { transform: rotate(90deg); background: #48443d; }
       .add-button:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
 
-      .options-button, .capture-button {
+      .options-button, .capture-button, .copy-picture-button {
         position: fixed;
         right: 106px;
         bottom: 37px;
@@ -274,10 +274,12 @@
         box-shadow: 0 6px 18px rgba(41, 40, 36, 0.18);
       }
 
-      .options-button:hover, .options-button[aria-expanded="true"], .capture-button:hover { background: #f0ede7; }
-      .options-button:focus-visible, .capture-button:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+      .options-button:hover, .options-button[aria-expanded="true"], .capture-button:hover, .copy-picture-button:hover { background: #f0ede7; }
+      .options-button:focus-visible, .capture-button:focus-visible, .copy-picture-button:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
       .options-button svg, .capture-button svg { width: 20px; height: 20px; }
       .capture-button { right: 162px; }
+      .copy-picture-button { right: 218px; bottom: 41px; width: 36px; height: 36px; }
+      .copy-picture-button svg { width: 16px; height: 16px; }
       .options-popover { right: 32px; bottom: 104px; width: 260px; }
       .options-row { display: grid; gap: 8px; margin-top: 14px; font-size: 12px; font-weight: 700; }
       .options-row-header { display: flex; justify-content: space-between; }
@@ -291,6 +293,7 @@
       @media (max-width: 600px) {
         .options-button, .capture-button { right: 92px; bottom: 29px; }
         .capture-button { right: 148px; }
+        .copy-picture-button { right: 204px; bottom: 33px; }
         .options-popover { right: 16px; bottom: 94px; }
         .site-header { padding: 24px; gap: 8px; }
         .header-note { display: none; }
@@ -373,6 +376,9 @@
         </div>
       </div>
     </section>
+    <button class="copy-picture-button" id="copy-picture-button" type="button" aria-label="Copy a picture of the squares to the clipboard" title="Copy picture">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>
+    </button>
     <button class="capture-button" id="capture-button" type="button" aria-label="Save a picture of the squares" title="Save a picture">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
     </button>
@@ -1171,7 +1177,7 @@
       }
 
       // Paints the squares straight onto a canvas, so handles and buttons never end up in the picture.
-      function capturePicture() {
+      function renderPicture() {
         const bounds = grid.getBoundingClientRect();
         const scale = Math.max(2, window.devicePixelRatio || 1);
         const canvas = document.createElement('canvas');
@@ -1193,16 +1199,40 @@
           context.fill();
           drawSwatchLabel(context, square, bounds);
         });
-        canvas.toBlob((blob) => {
+        return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      }
+
+      function savePicture() {
+        renderPicture().then((blob) => {
           const link = document.createElement('a');
           link.href = URL.createObjectURL(blob);
           link.download = 'color-squares.png';
           link.click();
           window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-        }, 'image/png');
+        });
       }
 
-      document.querySelector('#capture-button').addEventListener('click', capturePicture);
+      const copyPictureButton = document.querySelector('#copy-picture-button');
+      const copyPictureIcon = copyPictureButton.innerHTML;
+      const copiedIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+      async function copyPicture() {
+        try {
+          // Safari only allows the write if the ClipboardItem is created during the click, so it gets the blob as a promise.
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': renderPicture() })]);
+          copyPictureButton.title = 'Copied';
+          copyPictureButton.innerHTML = copiedIcon;
+        } catch (_) {
+          copyPictureButton.title = 'Copy unavailable';
+        }
+        window.setTimeout(() => {
+          copyPictureButton.title = 'Copy picture';
+          copyPictureButton.innerHTML = copyPictureIcon;
+        }, 1600);
+      }
+
+      document.querySelector('#capture-button').addEventListener('click', savePicture);
+      copyPictureButton.addEventListener('click', copyPicture);
       addButton.addEventListener('click', addSquare);
       window.addEventListener('resize', () => { updateGrid(); positionPicker(); });
       window.addEventListener('scroll', positionPicker, true);
