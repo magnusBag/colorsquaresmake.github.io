@@ -98,6 +98,27 @@
         cursor: pointer;
       }
 
+      .remove-button {
+        position: absolute;
+        z-index: 1;
+        top: 9px;
+        right: 9px;
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(41, 40, 36, 0.72);
+        color: #fff;
+        font: 22px/1 Arial, Helvetica, sans-serif;
+        cursor: pointer;
+      }
+
+      .remove-button:hover { background: #292824; }
+      .remove-button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
       .hint {
         position: fixed;
         bottom: 40px;
@@ -152,7 +173,7 @@
       <div class="grid" id="grid" aria-label="Color squares"></div>
     </main>
 
-    <p class="hint">Click a square to change its color</p>
+    <p class="hint">Click to recolor · × to remove</p>
     <button class="add-button" id="add-square" type="button" aria-label="Add a square" title="Add a square">+</button>
 
     <script>
@@ -160,11 +181,20 @@
       const addButton = document.querySelector('#add-square');
       const colors = ['#f27864', '#6769dd', '#eebd59', '#74b99b', '#cb8bbd', '#75a8cb'];
 
+      function updateLabels() {
+        [...grid.children].forEach((square, index) => {
+          const number = index + 1;
+          square.querySelector('input').setAttribute('aria-label', `Choose color for square ${number}`);
+          square.querySelector('button').setAttribute('aria-label', `Remove square ${number}`);
+        });
+      }
+
       function addSquare() {
         const number = grid.children.length + 1;
         const color = colors[(number - 1) % colors.length];
         const square = document.createElement('div');
         const picker = document.createElement('input');
+        const removeButton = document.createElement('button');
 
         square.className = 'square';
         square.style.setProperty('--square-color', color);
@@ -175,8 +205,21 @@
           square.style.setProperty('--square-color', picker.value);
         });
 
-        square.append(picker);
+        removeButton.className = 'remove-button';
+        removeButton.type = 'button';
+        removeButton.textContent = '×';
+        removeButton.addEventListener('click', () => {
+          const nextFocus = square.nextElementSibling?.querySelector('.remove-button')
+            || square.previousElementSibling?.querySelector('.remove-button')
+            || addButton;
+          square.remove();
+          updateLabels();
+          nextFocus.focus();
+        });
+
+        square.append(picker, removeButton);
         grid.append(square);
+        updateLabels();
       }
 
       addButton.addEventListener('click', addSquare);
