@@ -58,19 +58,18 @@
       }
 
       .grid {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: center;
+        display: grid;
+        grid-template-columns: repeat(var(--columns, 2), var(--cell-size));
+        grid-auto-rows: var(--cell-size);
         gap: clamp(14px, 2.2vw, 28px);
-        width: min(100%, 880px);
+        --cell-size: clamp(120px, 17vw, 190px);
       }
 
       .square {
         position: relative;
-        flex: 0 0 auto;
-        width: clamp(120px, 17vw, 190px);
-        aspect-ratio: 1;
+        grid-column: span var(--col-span, 1);
+        grid-row: span var(--row-span, 1);
+        min-width: 0;
         background: var(--square-color);
         border-radius: 2px;
         box-shadow: 0 12px 28px rgba(48, 43, 34, 0.09);
@@ -87,6 +86,16 @@
         outline-offset: 5px;
       }
 
+      .square.is-dragging { opacity: 0.25; }
+
+      .drag-ghost {
+        position: fixed;
+        z-index: 10;
+        pointer-events: none;
+        opacity: 0.94;
+        box-shadow: 0 24px 45px rgba(48, 43, 34, 0.22);
+      }
+
       .square input[type="color"] {
         position: absolute;
         inset: 0;
@@ -98,11 +107,9 @@
         cursor: pointer;
       }
 
-      .remove-button {
+      .square-control {
         position: absolute;
         z-index: 1;
-        top: 9px;
-        right: 9px;
         display: grid;
         place-items: center;
         width: 32px;
@@ -116,8 +123,13 @@
         cursor: pointer;
       }
 
-      .remove-button:hover { background: #292824; }
-      .remove-button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+      .square-control:hover { background: #292824; }
+      .square-control:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+      .drag-handle { top: 9px; left: 9px; font-size: 20px; cursor: grab; touch-action: none; }
+      .drag-handle:active { cursor: grabbing; }
+      .remove-button { top: 9px; right: 9px; }
+      .span-controls { position: absolute; z-index: 1; bottom: 9px; left: 9px; display: flex; gap: 5px; }
+      .span-button { position: static; width: 40px; height: 30px; border-radius: 16px; font-size: 14px; font-weight: 700; }
 
       .hint {
         position: fixed;
@@ -152,8 +164,7 @@
         .site-header { padding: 24px; }
         .header-note { display: none; }
         main { padding: 90px 20px 110px; }
-        .grid { gap: 14px; }
-        .square { width: min(39vw, 170px); }
+        .grid { gap: 14px; --cell-size: min(39vw, 170px); }
         .hint { left: 24px; bottom: 38px; max-width: 52%; line-height: 1.4; }
         .add-button { right: 22px; bottom: 22px; width: 58px; height: 58px; }
       }
@@ -173,58 +184,239 @@
       <div class="grid" id="grid" aria-label="Color squares"></div>
     </main>
 
-    <p class="hint">Click to recolor · × to remove</p>
+    <p class="hint">Click to recolor · drag ☰ to move · ↔ / ↕ to resize · × to remove</p>
     <button class="add-button" id="add-square" type="button" aria-label="Add a square" title="Add a square">+</button>
 
     <script>
       const grid = document.querySelector('#grid');
       const addButton = document.querySelector('#add-square');
       const colors = ['#f27864', '#6769dd', '#eebd59', '#74b99b', '#cb8bbd', '#75a8cb'];
+      const storageKey = 'color-squares-state-v1';
+
+      function saveState() {
+        const state = [...grid.children].map((square) => ({
+          color: square.querySelector('input').value,
+          columns: Number(square.dataset.columns),
+          rows: Number(square.dataset.rows)
+        }));
+        try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch (_) {}
+      }
+
+      function loadState() {
+        try {
+          const saved = localStorage.getItem(storageKey);
+          if (saved === null) return null;
+          const state = JSON.parse(saved);
+          if (!Array.isArray(state)) return null;
+          return state.filter((item) =>
+            item && /^#[0-9a-f]{6}$/i.test(item.color)
+            && [1, 2].includes(item.columns) && [1, 2].includes(item.rows)
+          );
+        } catch (_) { return null; }
+      }
+
+      function updateGrid() {
+        const maxColumns = window.innerWidth <= 600 ? 2 : window.innerWidth <= 900 ? 3 : 4;
+        const neededColumns = [...grid.children].reduce((sum, square) => sum + Number(square.dataset.columns), 0);
+        grid.style.setProperty('--columns', Math.max(1, Math.min(maxColumns, neededColumns)));
+      }
 
       function updateLabels() {
         [...grid.children].forEach((square, index) => {
           const number = index + 1;
           square.querySelector('input').setAttribute('aria-label', `Choose color for square ${number}`);
-          square.querySelector('button').setAttribute('aria-label', `Remove square ${number}`);
+          square.querySelector('.remove-button').setAttribute('aria-label', `Remove square ${number}`);
+          square.querySelector('.drag-handle').setAttribute('aria-label', `Move square ${number}; drag or use arrow keys`);
+          square.querySelector('.column-button').setAttribute('aria-label', `Make square ${number} ${square.dataset.columns === '1' ? 'two columns' : 'one column'} wide`);
+          square.querySelector('.row-button').setAttribute('aria-label', `Make square ${number} ${square.dataset.rows === '1' ? 'two rows' : 'one row'} tall`);
         });
       }
 
-      function addSquare() {
-        const number = grid.children.length + 1;
-        const color = colors[(number - 1) % colors.length];
+      function animateReorder(change) {
+        const before = new Map([...grid.children].map((square) => [square, square.getBoundingClientRect()]));
+        change();
+        [...grid.children].forEach((square) => {
+          if (square.classList.contains('is-dragging')) return;
+          const old = before.get(square);
+          if (!old) return;
+          const now = square.getBoundingClientRect();
+          const dx = old.left - now.left;
+          const dy = old.top - now.top;
+          if (dx || dy) square.animate(
+            [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'translate(0, 0)' }],
+            { duration: 250, easing: 'cubic-bezier(.2,.8,.2,1)' }
+          );
+        });
+      }
+
+      function startDrag(event, square) {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        const startX = event.clientX;
+        const startY = event.clientY;
+        let ghost = null;
+
+        function move(moveEvent) {
+          if (moveEvent.pointerId !== event.pointerId) return;
+          const dx = moveEvent.clientX - startX;
+          const dy = moveEvent.clientY - startY;
+          if (!ghost && Math.hypot(dx, dy) < 5) return;
+          if (!ghost) {
+            const rect = square.getBoundingClientRect();
+            ghost = square.cloneNode(true);
+            ghost.classList.add('drag-ghost');
+            ghost.inert = true;
+            ghost.setAttribute('aria-hidden', 'true');
+            ghost.style.left = `${rect.left}px`;
+            ghost.style.top = `${rect.top}px`;
+            ghost.style.width = `${rect.width}px`;
+            ghost.style.height = `${rect.height}px`;
+            ghost.style.gridColumn = 'auto';
+            ghost.style.gridRow = 'auto';
+            document.body.append(ghost);
+            square.classList.add('is-dragging');
+          }
+          ghost.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+
+          const target = document.elementsFromPoint(moveEvent.clientX, moveEvent.clientY)
+            .map((element) => element.closest?.('.square'))
+            .find((element) => element && element !== square && element !== ghost);
+          if (!target) return;
+
+          const rect = target.getBoundingClientRect();
+          const nearMiddle = Math.abs(moveEvent.clientY - (rect.top + rect.height / 2)) < rect.height / 3;
+          const after = nearMiddle
+            ? moveEvent.clientX > rect.left + rect.width / 2
+            : moveEvent.clientY > rect.top + rect.height / 2;
+          if (after && target.nextElementSibling === square) return;
+          if (!after && square.nextElementSibling === target) return;
+
+          animateReorder(() => {
+            if (after) target.after(square);
+            else target.before(square);
+          });
+          updateLabels();
+        }
+
+        function finish(endEvent) {
+          if (endEvent.pointerId !== event.pointerId) return;
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', finish);
+          window.removeEventListener('pointercancel', finish);
+          if (ghost) {
+            ghost.remove();
+            square.classList.remove('is-dragging');
+            saveState();
+          }
+        }
+
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', finish);
+        window.addEventListener('pointercancel', finish);
+      }
+
+      function createSquare(color, columns = 1, rows = 1) {
         const square = document.createElement('div');
         const picker = document.createElement('input');
+        const dragHandle = document.createElement('button');
         const removeButton = document.createElement('button');
+        const spanControls = document.createElement('div');
+        const columnButton = document.createElement('button');
+        const rowButton = document.createElement('button');
 
         square.className = 'square';
         square.style.setProperty('--square-color', color);
+        square.dataset.columns = columns;
+        square.dataset.rows = rows;
+        square.style.setProperty('--col-span', columns);
+        square.style.setProperty('--row-span', rows);
         picker.type = 'color';
         picker.value = color;
-        picker.setAttribute('aria-label', `Choose color for square ${number}`);
         picker.addEventListener('input', () => {
           square.style.setProperty('--square-color', picker.value);
+          saveState();
         });
 
-        removeButton.className = 'remove-button';
+        dragHandle.className = 'square-control drag-handle';
+        dragHandle.type = 'button';
+        dragHandle.textContent = '☰';
+        dragHandle.addEventListener('pointerdown', (event) => startDrag(event, square));
+        dragHandle.addEventListener('keydown', (event) => {
+          const forward = event.key === 'ArrowRight' || event.key === 'ArrowDown';
+          const backward = event.key === 'ArrowLeft' || event.key === 'ArrowUp';
+          if (!forward && !backward) return;
+          const neighbor = forward ? square.nextElementSibling : square.previousElementSibling;
+          if (!neighbor) return;
+          event.preventDefault();
+          animateReorder(() => {
+            if (forward) neighbor.after(square);
+            else neighbor.before(square);
+          });
+          updateLabels();
+          saveState();
+        });
+
+        removeButton.className = 'square-control remove-button';
         removeButton.type = 'button';
         removeButton.textContent = '×';
         removeButton.addEventListener('click', () => {
           const nextFocus = square.nextElementSibling?.querySelector('.remove-button')
             || square.previousElementSibling?.querySelector('.remove-button')
             || addButton;
-          square.remove();
+          animateReorder(() => {
+            square.remove();
+            updateGrid();
+          });
           updateLabels();
+          saveState();
           nextFocus.focus();
         });
 
-        square.append(picker, removeButton);
+        function makeSpanButton(button, axis, symbol) {
+          button.className = `square-control span-button ${axis === 'columns' ? 'column-button' : 'row-button'}`;
+          button.type = 'button';
+          button.textContent = `${symbol} ${square.dataset[axis]}`;
+          button.addEventListener('click', () => {
+            const value = square.dataset[axis] === '1' ? 2 : 1;
+            animateReorder(() => {
+              square.dataset[axis] = value;
+              square.style.setProperty(axis === 'columns' ? '--col-span' : '--row-span', value);
+              updateGrid();
+            });
+            button.textContent = `${symbol} ${value}`;
+            updateLabels();
+            saveState();
+          });
+        }
+        makeSpanButton(columnButton, 'columns', '↔');
+        makeSpanButton(rowButton, 'rows', '↕');
+        spanControls.className = 'span-controls';
+        spanControls.append(columnButton, rowButton);
+        square.append(picker, dragHandle, removeButton, spanControls);
         grid.append(square);
+      }
+
+      function addSquare() {
+        createSquare(colors[grid.children.length % colors.length]);
+        updateGrid();
+        updateLabels();
+        saveState();
+      }
+
+      function render(state) {
+        grid.replaceChildren();
+        (state ?? [{ color: colors[0], columns: 1, rows: 1 }, { color: colors[1], columns: 1, rows: 1 }])
+          .forEach(({ color, columns, rows }) => createSquare(color, columns, rows));
+        updateGrid();
         updateLabels();
       }
 
       addButton.addEventListener('click', addSquare);
-      addSquare();
-      addSquare();
+      window.addEventListener('resize', updateGrid);
+      window.addEventListener('storage', (event) => {
+        if (event.key === storageKey) render(loadState());
+      });
+      render(loadState());
     </script>
   </body>
 </html>
