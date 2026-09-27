@@ -112,24 +112,30 @@
         z-index: 1;
         display: grid;
         place-items: center;
-        width: 32px;
-        height: 32px;
+        width: 24px;
+        height: 26px;
         padding: 0;
         border: 0;
         border-radius: 50%;
         background: rgba(41, 40, 36, 0.72);
         color: #fff;
-        font: 22px/1 Arial, Helvetica, sans-serif;
+        font: 18px/1 Arial, Helvetica, sans-serif;
         cursor: pointer;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 150ms ease;
       }
 
+      .square:hover .square-control,
+      .square:focus-within .square-control,
+      .drag-ghost .square-control { opacity: 1; pointer-events: auto; }
       .square-control:hover { background: #292824; }
       .square-control:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
-      .drag-handle { top: 9px; left: 9px; font-size: 20px; cursor: grab; touch-action: none; }
+      .drag-handle { top: 8px; left: 6px; font-size: 17px; cursor: grab; touch-action: none; }
       .drag-handle:active { cursor: grabbing; }
-      .remove-button { top: 9px; right: 9px; }
-      .span-controls { position: absolute; z-index: 1; bottom: 9px; left: 9px; display: flex; gap: 5px; }
-      .span-button { position: static; width: 40px; height: 30px; border-radius: 16px; font-size: 14px; font-weight: 700; }
+      .remove-button { top: 8px; right: 6px; }
+      .span-controls { position: absolute; z-index: 1; top: 8px; left: 50%; display: flex; gap: 4px; transform: translateX(-50%); pointer-events: none; }
+      .span-button { position: static; width: 26px; height: 26px; border-radius: 16px; font-size: 11px; font-weight: 700; }
 
       .hint {
         position: fixed;
