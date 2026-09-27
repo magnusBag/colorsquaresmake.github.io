@@ -96,16 +96,56 @@
         box-shadow: 0 24px 45px rgba(48, 43, 34, 0.22);
       }
 
-      .square input[type="color"] {
+      .square-picker {
         position: absolute;
         inset: 0;
         width: 100%;
         height: 100%;
         padding: 0;
         border: 0;
-        opacity: 0;
+        background: transparent;
         cursor: pointer;
       }
+
+      .square-name {
+        position: absolute;
+        bottom: 12px;
+        left: 12px;
+        max-width: calc(100% - 24px);
+        overflow: hidden;
+        color: var(--square-label-color);
+        font-size: 12px;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      .cmyk-popover {
+        position: fixed;
+        z-index: 20;
+        width: 310px;
+        max-width: calc(100vw - 32px);
+        padding: 18px;
+        border: 1px solid #dedbd5;
+        border-radius: 14px;
+        background: #fff;
+        color: #292824;
+        box-shadow: 0 20px 55px rgba(41, 40, 36, 0.2);
+      }
+
+      .cmyk-popover[hidden] { display: none; }
+      .picker-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+      .picker-heading h2 { margin: 0; font-size: 15px; }
+      .picker-close { border: 0; background: transparent; color: #292824; font-size: 24px; line-height: 1; cursor: pointer; }
+      .picker-name { display: grid; gap: 6px; margin-bottom: 16px; font-size: 12px; font-weight: 700; }
+      .picker-name input { width: 100%; padding: 9px 10px; border: 1px solid #c8c4bd; border-radius: 6px; font: inherit; }
+      .channel-row { display: grid; grid-template-columns: 18px minmax(0, 1fr) 55px; align-items: center; gap: 10px; margin: 11px 0; font-size: 13px; font-weight: 700; }
+      .channel-row input[type="range"] { width: 100%; accent-color: #292824; }
+      .channel-row input[type="number"] { width: 55px; padding: 6px 4px; border: 1px solid #c8c4bd; border-radius: 5px; font: inherit; text-align: center; }
+      .picker-preview { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #e8e5df; font-size: 12px; }
+      .preview-swatch { width: 28px; height: 28px; border: 1px solid rgba(0,0,0,.12); border-radius: 5px; background: var(--preview-color); }
+      .picker-note { margin: 10px 0 0; color: #77736c; font-size: 11px; line-height: 1.4; }
 
       .square-control {
         position: absolute;
@@ -190,7 +230,15 @@
       <div class="grid" id="grid" aria-label="Color squares"></div>
     </main>
 
-    <p class="hint">Click to recolor · drag ☰ to move · ↔ / ↕ to resize · × to remove</p>
+    <section class="cmyk-popover" id="cmyk-picker" role="dialog" aria-label="CMYK color picker" hidden>
+      <div class="picker-heading"><h2>Color</h2><button class="picker-close" id="picker-close" type="button" aria-label="Close color picker">×</button></div>
+      <label class="picker-name">Name <input id="color-name" type="text" maxlength="80" placeholder="e.g. Nile blue" /></label>
+      <div id="channels"></div>
+      <div class="picker-preview"><span class="preview-swatch" id="preview-swatch"></span><span id="preview-hex"></span></div>
+      <p class="picker-note">Screen colors are an approximation of CMYK print colors.</p>
+    </section>
+
+    <p class="hint">Click to edit CMYK · drag ☰ to move · ↔ / ↕ to resize · × to remove</p>
     <button class="add-button" id="add-square" type="button" aria-label="Add a square" title="Add a square">+</button>
 
     <script>
@@ -198,10 +246,136 @@
       const addButton = document.querySelector('#add-square');
       const colors = ['#f27864', '#6769dd', '#eebd59', '#74b99b', '#cb8bbd', '#75a8cb'];
       const storageKey = 'color-squares-state-v1';
+      const pickerPanel = document.querySelector('#cmyk-picker');
+      const nameInput = document.querySelector('#color-name');
+      const previewSwatch = document.querySelector('#preview-swatch');
+      const previewHex = document.querySelector('#preview-hex');
+      const channelNames = { c: 'Cyan', m: 'Magenta', y: 'Yellow', k: 'Black' };
+      let activeSquare = null;
+
+      document.querySelector('#channels').innerHTML = Object.entries(channelNames).map(([channel, label]) => `
+        <div class="channel-row" data-channel="${channel}">
+          <span aria-hidden="true">${channel.toUpperCase()}</span>
+          <input type="range" min="0" max="100" value="0" aria-label="${label}" />
+          <input type="number" min="0" max="100" step="1" value="0" aria-label="${label} percent" />
+        </div>
+      `).join('');
+
+      function cmykToHex({ c, m, y, k }) {
+        const hex = [c, m, y].map((channel) =>
+          Math.round(255 * (1 - channel / 100) * (1 - k / 100))
+            .toString(16).padStart(2, '0')
+        ).join('');
+        return `#${hex}`;
+      }
+
+      function hexToCmyk(hex) {
+        const [r, g, b] = [1, 3, 5].map((index) => parseInt(hex.slice(index, index + 2), 16) / 255);
+        const black = 1 - Math.max(r, g, b);
+        if (black === 1) return { c: 0, m: 0, y: 0, k: 100 };
+        return {
+          c: Math.round(100 * (1 - r - black) / (1 - black)),
+          m: Math.round(100 * (1 - g - black) / (1 - black)),
+          y: Math.round(100 * (1 - b - black) / (1 - black)),
+          k: Math.round(100 * black)
+        };
+      }
+
+      function validCmyk(value) {
+        return value && Object.keys(channelNames).every((channel) =>
+          Number.isInteger(value[channel]) && value[channel] >= 0 && value[channel] <= 100
+        );
+      }
+
+      function setSquareColor(square, color) {
+        square.dataset.color = color;
+        square.style.setProperty('--square-color', color);
+        const [r, g, b] = [1, 3, 5].map((index) => parseInt(color.slice(index, index + 2), 16));
+        square.style.setProperty('--square-label-color', 0.2126 * r + 0.7152 * g + 0.0722 * b > 150 ? '#292824' : '#fff');
+      }
+
+      function positionPicker() {
+        if (!activeSquare || pickerPanel.hidden) return;
+        const square = activeSquare.getBoundingClientRect();
+        const panel = pickerPanel.getBoundingClientRect();
+        const left = Math.max(16, Math.min(square.left, window.innerWidth - panel.width - 16));
+        const below = square.bottom + 12;
+        const above = square.top - panel.height - 12;
+        const top = below + panel.height <= window.innerHeight - 16 ? below
+          : above >= 16 ? above
+          : Math.max(16, Math.min(below, window.innerHeight - panel.height - 16));
+        pickerPanel.style.left = `${left}px`;
+        pickerPanel.style.top = `${top}px`;
+      }
+
+      function closePicker(restoreFocus = false) {
+        const square = activeSquare;
+        activeSquare = null;
+        pickerPanel.hidden = true;
+        if (restoreFocus && square?.isConnected) square.querySelector('.square-picker').focus();
+      }
+
+      function openPicker(square) {
+        activeSquare = square;
+        nameInput.value = square.dataset.name || '';
+        document.querySelectorAll('.channel-row').forEach((row) => {
+          const value = square.cmyk[row.dataset.channel];
+          row.querySelector('input[type="range"]').value = value;
+          row.querySelector('input[type="number"]').value = value;
+        });
+        previewSwatch.style.setProperty('--preview-color', square.dataset.color);
+        previewHex.textContent = square.dataset.color.toUpperCase();
+        pickerPanel.hidden = false;
+        positionPicker();
+        nameInput.focus();
+      }
+
+      function applyCmyk() {
+        if (!activeSquare) return;
+        activeSquare.cmyk = Object.fromEntries([...document.querySelectorAll('.channel-row')].map((row) => [
+          row.dataset.channel, Number(row.querySelector('input[type="range"]').value)
+        ]));
+        const color = cmykToHex(activeSquare.cmyk);
+        setSquareColor(activeSquare, color);
+        previewSwatch.style.setProperty('--preview-color', color);
+        previewHex.textContent = color.toUpperCase();
+        saveState();
+      }
+
+      document.querySelectorAll('.channel-row').forEach((row) => {
+        const range = row.querySelector('input[type="range"]');
+        const number = row.querySelector('input[type="number"]');
+        range.addEventListener('input', () => { number.value = range.value; applyCmyk(); });
+        number.addEventListener('input', () => {
+          if (number.value === '') return;
+          const value = Math.max(0, Math.min(100, Math.round(Number(number.value))));
+          range.value = value;
+          applyCmyk();
+        });
+        number.addEventListener('change', () => { number.value = range.value; });
+      });
+
+      nameInput.addEventListener('input', () => {
+        if (!activeSquare) return;
+        activeSquare.dataset.name = nameInput.value;
+        const label = activeSquare.querySelector('.square-name');
+        label.textContent = nameInput.value;
+        label.hidden = !nameInput.value;
+        saveState();
+      });
+      document.querySelector('#picker-close').addEventListener('click', () => closePicker(true));
+      document.addEventListener('pointerdown', (event) => {
+        if (activeSquare && !pickerPanel.contains(event.target) && !activeSquare.contains(event.target)) closePicker();
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && activeSquare) closePicker(true);
+      });
 
       function saveState() {
         const state = [...grid.children].map((square) => ({
-          color: square.querySelector('input').value,
+          color: square.dataset.color,
+          cmyk: square.cmyk,
+          name: square.dataset.name || '',
           columns: Number(square.dataset.columns),
           rows: Number(square.dataset.rows)
         }));
@@ -217,7 +391,11 @@
           return state.filter((item) =>
             item && /^#[0-9a-f]{6}$/i.test(item.color)
             && [1, 2].includes(item.columns) && [1, 2].includes(item.rows)
-          );
+          ).map((item) => ({
+            ...item,
+            cmyk: validCmyk(item.cmyk) ? item.cmyk : hexToCmyk(item.color),
+            name: typeof item.name === 'string' ? item.name.slice(0, 80) : ''
+          }));
         } catch (_) { return null; }
       }
 
@@ -230,7 +408,7 @@
       function updateLabels() {
         [...grid.children].forEach((square, index) => {
           const number = index + 1;
-          square.querySelector('input').setAttribute('aria-label', `Choose color for square ${number}`);
+          square.querySelector('.square-picker').setAttribute('aria-label', `Edit CMYK color for square ${number}`);
           square.querySelector('.remove-button').setAttribute('aria-label', `Remove square ${number}`);
           square.querySelector('.drag-handle').setAttribute('aria-label', `Move square ${number}; drag or use arrow keys`);
           square.querySelector('.column-button').setAttribute('aria-label', `Make square ${number} ${square.dataset.columns === '1' ? 'two columns' : 'one column'} wide`);
@@ -258,6 +436,7 @@
       function startDrag(event, square) {
         if (event.button !== 0) return;
         event.preventDefault();
+        if (activeSquare) closePicker();
         const startX = event.clientX;
         const startY = event.clientY;
         let ghost = null;
@@ -321,9 +500,10 @@
         window.addEventListener('pointercancel', finish);
       }
 
-      function createSquare(color, columns = 1, rows = 1) {
+      function createSquare(color, columns = 1, rows = 1, cmyk = hexToCmyk(color), name = '') {
         const square = document.createElement('div');
-        const picker = document.createElement('input');
+        const picker = document.createElement('button');
+        const nameLabel = document.createElement('span');
         const dragHandle = document.createElement('button');
         const removeButton = document.createElement('button');
         const spanControls = document.createElement('div');
@@ -331,17 +511,19 @@
         const rowButton = document.createElement('button');
 
         square.className = 'square';
-        square.style.setProperty('--square-color', color);
+        square.cmyk = cmyk;
+        square.dataset.name = name;
+        setSquareColor(square, color);
         square.dataset.columns = columns;
         square.dataset.rows = rows;
         square.style.setProperty('--col-span', columns);
         square.style.setProperty('--row-span', rows);
-        picker.type = 'color';
-        picker.value = color;
-        picker.addEventListener('input', () => {
-          square.style.setProperty('--square-color', picker.value);
-          saveState();
-        });
+        picker.className = 'square-picker';
+        picker.type = 'button';
+        picker.addEventListener('click', () => openPicker(square));
+        nameLabel.className = 'square-name';
+        nameLabel.textContent = name;
+        nameLabel.hidden = !name;
 
         dragHandle.className = 'square-control drag-handle';
         dragHandle.type = 'button';
@@ -366,6 +548,7 @@
         removeButton.type = 'button';
         removeButton.textContent = '×';
         removeButton.addEventListener('click', () => {
+          if (activeSquare === square) closePicker();
           const nextFocus = square.nextElementSibling?.querySelector('.remove-button')
             || square.previousElementSibling?.querySelector('.remove-button')
             || addButton;
@@ -398,7 +581,7 @@
         makeSpanButton(rowButton, 'rows', '↕');
         spanControls.className = 'span-controls';
         spanControls.append(columnButton, rowButton);
-        square.append(picker, dragHandle, removeButton, spanControls);
+        square.append(picker, nameLabel, dragHandle, removeButton, spanControls);
         grid.append(square);
       }
 
@@ -410,15 +593,17 @@
       }
 
       function render(state) {
+        if (activeSquare) closePicker();
         grid.replaceChildren();
         (state ?? [{ color: colors[0], columns: 1, rows: 1 }, { color: colors[1], columns: 1, rows: 1 }])
-          .forEach(({ color, columns, rows }) => createSquare(color, columns, rows));
+          .forEach(({ color, columns, rows, cmyk, name }) => createSquare(color, columns, rows, cmyk, name));
         updateGrid();
         updateLabels();
       }
 
       addButton.addEventListener('click', addSquare);
-      window.addEventListener('resize', updateGrid);
+      window.addEventListener('resize', () => { updateGrid(); positionPicker(); });
+      window.addEventListener('scroll', positionPicker, true);
       window.addEventListener('storage', (event) => {
         if (event.key === storageKey) render(loadState());
       });
