@@ -9,8 +9,8 @@
       :root {
         color-scheme: light;
         font-family: Arial, Helvetica, sans-serif;
-        background: var(--background-color, #f7f5f0);
-        color: var(--text-color, #292824);
+        background: #f7f5f0;
+        color: #292824;
       }
 
       * { box-sizing: border-box; }
@@ -18,10 +18,12 @@
       body {
         margin: 0;
         min-height: 100vh;
+        overflow: hidden;
       }
 
       .site-header {
         position: absolute;
+        z-index: 5;
         top: 0;
         left: 0;
         right: 0;
@@ -35,6 +37,10 @@
 
       .brand {
         margin: 0;
+        padding: 6px 8px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.86);
+        color: #292824;
         font-size: 13px;
         font-weight: 800;
         letter-spacing: 0.13em;
@@ -43,79 +49,33 @@
 
       .header-note, .hint {
         margin: 0;
-        color: var(--muted-color, #77736c);
+        color: #292824;
         font-size: 12px;
         letter-spacing: 0.04em;
       }
 
-      .header-actions {
-        display: flex;
-        align-items: center;
-        gap: 24px;
-      }
-
-      .background-picker {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 5px 7px 5px 12px;
-        border-radius: 20px;
-        background: #fff;
-        color: #292824;
-        font-size: 12px;
-        font-weight: 700;
-        white-space: nowrap;
-        pointer-events: auto;
-      }
-
-      .background-picker input {
-        width: 32px;
-        height: 28px;
-        padding: 2px;
-        border: 1px solid #77736c;
-        border-radius: 6px;
-        background: #fff;
-        cursor: pointer;
-      }
-
-      .background-picker input:focus-visible { outline: 3px solid #292824; outline-offset: 2px; }
+      .header-note, .hint { padding: 6px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.86); }
 
       main {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        min-height: 100svh;
-        padding: 110px 32px;
+        width: 100%;
+        height: 100vh;
+        height: 100svh;
+        height: 100dvh;
       }
 
       .grid {
         display: grid;
-        grid-template-columns: repeat(var(--columns, 2), var(--cell-size));
-        grid-auto-rows: var(--cell-size);
-        gap: clamp(14px, 2.2vw, 28px);
-        --cell-size: clamp(120px, 17vw, 190px);
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
       }
 
       .square {
         position: relative;
-        grid-column: span var(--col-span, 1);
-        grid-row: span var(--row-span, 1);
         min-width: 0;
+        min-height: 0;
         background: var(--square-color);
-        border-radius: 2px;
-        box-shadow: 0 12px 28px rgba(48, 43, 34, 0.09);
-        transition: transform 180ms ease, box-shadow 180ms ease;
-      }
-
-      .square:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 18px 34px rgba(48, 43, 34, 0.14);
-      }
-
-      .square:focus-within {
-        outline: 3px solid #292824;
-        outline-offset: 5px;
+        transition: background-color 140ms ease;
       }
 
       .square.is-dragging { opacity: 0.25; }
@@ -135,8 +95,10 @@
         height: 100%;
         padding: 0;
         border: 0;
+        outline: none;
         background: transparent;
         cursor: pointer;
+        touch-action: none;
       }
 
       .square-name {
@@ -153,7 +115,7 @@
         pointer-events: none;
       }
 
-      .cmyk-popover, .shades-popover {
+      .cmyk-popover {
         position: fixed;
         z-index: 20;
         width: 310px;
@@ -166,7 +128,16 @@
         box-shadow: 0 20px 55px rgba(41, 40, 36, 0.2);
       }
 
-      .cmyk-popover[hidden], .shades-popover[hidden] { display: none; }
+      .cmyk-popover:not([hidden]) {
+        animation: popover-in 140ms ease-out;
+      }
+
+      @keyframes popover-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      .cmyk-popover[hidden] { display: none; }
       .picker-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
       .picker-heading h2 { margin: 0; font-size: 15px; }
       .picker-close { border: 0; background: transparent; color: #292824; font-size: 24px; line-height: 1; cursor: pointer; }
@@ -181,16 +152,28 @@
       .channel-row input[type="number"] { width: 55px; padding: 6px 4px; border: 1px solid #c8c4bd; border-radius: 5px; font: inherit; text-align: center; }
       .picker-preview { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #e8e5df; font-size: 12px; }
       .preview-swatch { width: 28px; height: 28px; border: 1px solid rgba(0,0,0,.12); border-radius: 5px; background: var(--preview-color); }
+      .copy-hex { margin-left: auto; padding: 6px 9px; border: 1px solid #dedbd5; border-radius: 6px; background: #fff; color: #292824; font: 700 11px Arial, Helvetica, sans-serif; cursor: pointer; }
+      .copy-hex:hover { background: #f7f5f0; }
       .picker-note { margin: 10px 0 0; color: #77736c; font-size: 11px; line-height: 1.4; }
-      .rgb-color-picker { display: flex; align-items: center; gap: 10px; margin-top: 15px; font-size: 12px; font-weight: 700; }
-      .rgb-color-picker input { width: 42px; height: 34px; padding: 2px; border: 1px solid #c8c4bd; border-radius: 6px; background: #fff; cursor: pointer; }
-      .rgb-color-picker input:focus-visible { outline: 3px solid #292824; outline-offset: 2px; }
+      .rgb-color-picker { display: grid; gap: 12px; margin-top: 8px; font-size: 12px; font-weight: 700; }
+      .color-plane { position: relative; height: 170px; border-radius: 8px; background: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent), hsl(var(--picker-hue, 0deg) 100% 50%); cursor: crosshair; touch-action: none; }
+      .color-plane::after { content: ''; position: absolute; left: var(--picker-saturation, 100%); top: var(--picker-value, 0%); width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px rgba(0,0,0,.55); transform: translate(-50%, -50%); pointer-events: none; }
+      .color-plane:focus-visible { outline: 3px solid #292824; outline-offset: 3px; }
+      .hue-control { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 10px; }
+      .hue-control input { width: 100%; accent-color: #292824; }
       .shade-slider { appearance: none; display: block; width: 100%; height: 16px; margin: 12px 0 8px; border-radius: 12px; cursor: pointer; }
       .shade-slider::-moz-range-track { height: 16px; border-radius: 12px; background: transparent; }
       .shade-slider::-webkit-slider-thumb { appearance: none; width: 22px; height: 22px; border: 3px solid #fff; border-radius: 50%; background: #292824; box-shadow: 0 0 0 1px #292824; }
       .shade-slider::-moz-range-thumb { width: 16px; height: 16px; border: 3px solid #fff; border-radius: 50%; background: #292824; box-shadow: 0 0 0 1px #292824; }
       .shade-slider:focus-visible { outline: 3px solid #292824; outline-offset: 4px; }
       .shade-scale { display: flex; justify-content: space-between; color: #77736c; font-size: 11px; }
+      .steal-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+      .steal-button { padding: 8px 11px; border: 1px solid #dedbd5; border-radius: 6px; background: #fff; color: #292824; font: 700 12px Arial, Helvetica, sans-serif; cursor: pointer; }
+      .steal-button:hover { background: #f7f5f0; }
+      .steal-button:focus-visible { outline: 3px solid #292824; outline-offset: 2px; }
+      .steal-drop { display: grid; place-items: center; min-height: 120px; margin-top: 10px; padding: 12px; border: 2px dashed #c8c4bd; border-radius: 8px; color: #77736c; font-size: 12px; text-align: center; }
+      .steal-drop.dragging { border-color: #292824; background: #f7f5f0; }
+      .steal-canvas { display: block; max-width: 100%; max-height: 220px; margin: 10px auto 0; border-radius: 6px; cursor: crosshair; touch-action: none; }
 
       .square-control {
         position: absolute;
@@ -216,12 +199,15 @@
       .drag-ghost .square-control { opacity: 1; pointer-events: auto; }
       .square-control:hover { background: #292824; }
       .square-control:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
-      .drag-handle { top: 8px; left: 6px; font-size: 17px; cursor: grab; touch-action: none; }
-      .drag-handle:active { cursor: grabbing; }
       .remove-button { top: 8px; right: 6px; }
-      .shades-button { right: 6px; bottom: 8px; width: 30px; height: 30px; font-size: 17px; }
-      .span-controls { position: absolute; z-index: 1; top: 8px; left: 50%; display: flex; gap: 4px; transform: translateX(-50%); pointer-events: none; }
-      .span-button { position: static; width: 26px; height: 26px; border-radius: 16px; font-size: 11px; font-weight: 700; }
+      .resize-handle { z-index: 2; width: 14px; height: 48px; border-radius: 8px; background: rgba(41, 40, 36, 0.42); touch-action: none; }
+      .resize-handle::after { content: ''; display: block; width: 3px; height: 24px; border-radius: 2px; background: #fff; }
+      .resize-left { top: 50%; left: 0; transform: translateY(-50%); cursor: ew-resize; }
+      .resize-right { top: 50%; right: 0; transform: translateY(-50%); cursor: ew-resize; }
+      .resize-top { top: 0; left: 50%; width: 48px; height: 14px; transform: translateX(-50%); cursor: ns-resize; }
+      .resize-bottom { bottom: 0; left: 50%; width: 48px; height: 14px; transform: translateX(-50%); cursor: ns-resize; }
+      .resize-top::after, .resize-bottom::after { width: 24px; height: 3px; }
+      .resize-handle[hidden] { display: none; }
 
       .hint {
         position: fixed;
@@ -241,22 +227,20 @@
         padding: 0;
         border: 0;
         border-radius: 50%;
-        background: var(--button-background, #292824);
-        color: var(--button-foreground, #fff);
+        background: #292824;
+        color: #fff;
         font: 300 39px/1 Arial, Helvetica, sans-serif;
         cursor: pointer;
         box-shadow: 0 8px 22px rgba(41, 40, 36, 0.18);
         transition: transform 180ms ease, background 180ms ease;
       }
 
-      .add-button:hover { transform: rotate(90deg); background: var(--button-hover, #48443d); }
-      .add-button:focus-visible { outline: 3px solid var(--text-color, #292824); outline-offset: 4px; }
+      .add-button:hover { transform: rotate(90deg); background: #48443d; }
+      .add-button:focus-visible { outline: 3px solid #292824; outline-offset: 4px; }
 
       @media (max-width: 600px) {
         .site-header { padding: 24px; gap: 8px; }
         .header-note { display: none; }
-        main { padding: 90px 20px 110px; }
-        .grid { gap: 14px; --cell-size: min(39vw, 170px); }
         .hint { left: 24px; bottom: 38px; max-width: 52%; line-height: 1.4; }
         .add-button { right: 22px; bottom: 22px; width: 58px; height: 58px; }
       }
@@ -267,16 +251,14 @@
 
       @media (prefers-reduced-motion: reduce) {
         .square, .add-button { transition: none; }
+        .cmyk-popover:not([hidden]) { animation: none; }
       }
     </style>
   </head>
   <body>
     <header class="site-header">
       <h1 class="brand">Color Squares</h1>
-      <div class="header-actions">
-        <p class="header-note">A little space to play with color</p>
-        <label class="background-picker">Background <input id="background-color" type="color" value="#f7f5f0" /></label>
-      </div>
+      <p class="header-note">A little space to play with color</p>
     </header>
 
     <main>
@@ -289,26 +271,36 @@
       <div class="picker-tabs" role="tablist" aria-label="Color mode">
         <button class="picker-tab" id="cmyk-tab" type="button" role="tab" aria-controls="cmyk-panel" aria-selected="true" tabindex="0">CMYK</button>
         <button class="picker-tab" id="rgb-tab" type="button" role="tab" aria-controls="rgb-panel" aria-selected="false" tabindex="-1">RGB</button>
+        <button class="picker-tab" id="shades-tab" type="button" role="tab" aria-controls="shades-panel" aria-selected="false" tabindex="-1">Shades</button>
+        <button class="picker-tab" id="steal-tab" type="button" role="tab" aria-controls="steal-panel" aria-selected="false" tabindex="-1">Steal</button>
       </div>
       <div id="cmyk-panel" role="tabpanel" aria-labelledby="cmyk-tab">
         <div id="channels"></div>
         <p class="picker-note">Screen colors are an approximation of CMYK print colors.</p>
       </div>
       <div id="rgb-panel" role="tabpanel" aria-labelledby="rgb-tab" hidden>
-        <div id="rgb-channels"></div>
-        <label class="rgb-color-picker">Color picker <input id="rgb-color-picker" type="color" value="#000000" /></label>
+        <div class="rgb-color-picker">
+          <div class="color-plane" id="color-plane" role="application" tabindex="0" aria-label="Color field. Use pointer or arrow keys to choose saturation and brightness."></div>
+          <label class="hue-control">Hue <input id="hue-slider" type="range" min="0" max="359" value="0" aria-label="Hue" /></label>
+        </div>
       </div>
-      <div class="picker-preview"><span class="preview-swatch" id="preview-swatch"></span><span id="preview-hex"></span></div>
+      <div id="shades-panel" role="tabpanel" aria-labelledby="shades-tab" hidden>
+        <input class="shade-slider" id="shade-slider" type="range" min="0" max="100" value="50" aria-label="Shade from darker to lighter" />
+        <div class="shade-scale"><span>Darker</span><span>Original</span><span>Lighter</span></div>
+      </div>
+      <div id="steal-panel" role="tabpanel" aria-labelledby="steal-tab" hidden>
+        <div class="steal-actions">
+          <button class="steal-button" id="steal-screen" type="button" hidden>Pick from screen</button>
+          <button class="steal-button" id="steal-upload" type="button">Choose image…</button>
+          <input id="steal-file" type="file" accept="image/*" hidden />
+        </div>
+        <div class="steal-drop" id="steal-drop">Drop or paste an image here, then click it to steal a color.</div>
+        <canvas class="steal-canvas" id="steal-canvas" aria-label="Image to pick colors from" hidden></canvas>
+      </div>
+      <div class="picker-preview"><span class="preview-swatch" id="preview-swatch"></span><span id="preview-hex"></span><button class="copy-hex" id="copy-hex" type="button">Copy HEX</button></div>
     </section>
 
-    <section class="shades-popover" id="shades-picker" role="dialog" aria-label="Color shades" hidden>
-      <div class="picker-heading"><h2>Shades</h2><button class="picker-close" id="shades-close" type="button" aria-label="Close shades">×</button></div>
-      <input class="shade-slider" id="shade-slider" type="range" min="0" max="100" value="50" aria-label="Shade from darker to lighter" />
-      <div class="shade-scale"><span>Darker</span><span>Original</span><span>Lighter</span></div>
-      <div class="picker-preview"><span class="preview-swatch" id="shade-preview"></span><span id="shade-hex"></span></div>
-    </section>
-
-    <p class="hint">Click to edit color · ◐ for shades · drag ☰ to move · ↔ / ↕ to resize · × to remove</p>
+    <p class="hint">Click to edit color · use the Shades tab for variations · Steal a color from your screen or an image · drag a square to move · drag an edge to resize · × to remove</p>
     <button class="add-button" id="add-square" type="button" aria-label="Add a square" title="Add a square">+</button>
 
     <script>
@@ -316,24 +308,30 @@
       const addButton = document.querySelector('#add-square');
       const colors = ['#f27864', '#6769dd', '#eebd59', '#74b99b', '#cb8bbd', '#75a8cb'];
       const storageKey = 'color-squares-state-v1';
-      const backgroundKey = 'color-squares-background-v1';
-      const defaultBackground = '#f7f5f0';
-      const backgroundPicker = document.querySelector('#background-color');
+      const layoutKey = 'color-squares-layout-v1';
       const pickerPanel = document.querySelector('#cmyk-picker');
-      const shadesPanel = document.querySelector('#shades-picker');
       const shadeSlider = document.querySelector('#shade-slider');
-      const shadePreview = document.querySelector('#shade-preview');
-      const shadeHex = document.querySelector('#shade-hex');
       const nameInput = document.querySelector('#color-name');
       const previewSwatch = document.querySelector('#preview-swatch');
       const previewHex = document.querySelector('#preview-hex');
-      const rgbColorPicker = document.querySelector('#rgb-color-picker');
+      const copyHexButton = document.querySelector('#copy-hex');
+      const colorPlane = document.querySelector('#color-plane');
+      const hueSlider = document.querySelector('#hue-slider');
       const pickerTabs = [...document.querySelectorAll('.picker-tab')];
+      const stealScreenButton = document.querySelector('#steal-screen');
+      const stealFileInput = document.querySelector('#steal-file');
+      const stealDrop = document.querySelector('#steal-drop');
+      const stealCanvas = document.querySelector('#steal-canvas');
+      const stealContext = stealCanvas.getContext('2d', { willReadFrequently: true });
       const channelNames = { c: 'Cyan', m: 'Magenta', y: 'Yellow', k: 'Black' };
-      const rgbChannelNames = { r: 'Red', g: 'Green', b: 'Blue' };
       let activeSquare = null;
-      let activeShadesSquare = null;
       let shadeBaseColor = null;
+      let pickerSaturation = 1;
+      let pickerValue = 1;
+      let layoutColumns = [];
+      let layoutRows = [];
+      let columnCount = 1;
+      let rowCount = 1;
 
       document.querySelector('#channels').innerHTML = Object.entries(channelNames).map(([channel, label]) => `
         <div class="channel-row" data-channel="${channel}">
@@ -342,14 +340,6 @@
           <input type="number" min="0" max="100" step="1" value="0" aria-label="${label} percent" />
         </div>
       `).join('');
-      document.querySelector('#rgb-channels').innerHTML = Object.entries(rgbChannelNames).map(([channel, label]) => `
-        <div class="channel-row" data-rgb-channel="${channel}">
-          <span aria-hidden="true">${channel.toUpperCase()}</span>
-          <input type="range" min="0" max="255" value="0" aria-label="${label}" />
-          <input type="number" min="0" max="255" step="1" value="0" aria-label="${label} value" />
-        </div>
-      `).join('');
-
       function cmykToHex({ c, m, y, k }) {
         const hex = [c, m, y].map((channel) =>
           Math.round(255 * (1 - channel / 100) * (1 - k / 100))
@@ -370,14 +360,28 @@
         };
       }
 
-      function hexToRgb(hex) {
-        return Object.fromEntries(Object.keys(rgbChannelNames).map((channel, index) => [
-          channel, parseInt(hex.slice(index * 2 + 1, index * 2 + 3), 16)
-        ]));
+      function rgbToHsv(hex) {
+        const rgb = [1, 3, 5].map((index) => parseInt(hex.slice(index, index + 2), 16) / 255);
+        const [r, g, b] = rgb;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const delta = max - min;
+        let hue = 0;
+        if (delta) {
+          if (max === r) hue = 60 * (((g - b) / delta) % 6);
+          else if (max === g) hue = 60 * ((b - r) / delta + 2);
+          else hue = 60 * ((r - g) / delta + 4);
+        }
+        return { h: (hue + 360) % 360, s: max === 0 ? 0 : delta / max, v: max };
       }
 
-      function rgbToHex({ r, g, b }) {
-        return `#${[r, g, b].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+      function hsvToHex(h, s, v) {
+        const chroma = v * s;
+        const x = chroma * (1 - Math.abs((h / 60) % 2 - 1));
+        const m = v - chroma;
+        const sectors = [[chroma, x, 0], [x, chroma, 0], [0, chroma, x], [0, x, chroma], [x, 0, chroma], [chroma, 0, x]];
+        const rgb = sectors[Math.floor(h / 60) % 6].map((value) => Math.round((value + m) * 255));
+        return `#${rgb.map((value) => value.toString(16).padStart(2, '0')).join('')}`;
       }
 
       function validCmyk(value) {
@@ -409,7 +413,6 @@
 
       function positionPicker() {
         positionPopover(activeSquare, pickerPanel);
-        positionPopover(activeShadesSquare, shadesPanel);
       }
 
       function closePicker(restoreFocus = false) {
@@ -426,20 +429,80 @@
           button.tabIndex = selected ? 0 : -1;
           document.getElementById(button.getAttribute('aria-controls')).hidden = !selected;
         });
+        if (tab.id === 'shades-tab' && activeSquare) resetShadeControls(activeSquare.dataset.color);
         positionPicker();
       }
 
       function syncPickerColor(color) {
-        const rgb = hexToRgb(color);
-        document.querySelectorAll('#rgb-channels .channel-row').forEach((row) => {
-          const value = rgb[row.dataset.rgbChannel];
-          row.querySelector('input[type="range"]').value = value;
-          row.querySelector('input[type="number"]').value = value;
-        });
-        rgbColorPicker.value = color;
+        syncColorPlane(color);
         previewSwatch.style.setProperty('--preview-color', color);
         previewHex.textContent = color.toUpperCase();
+        if (activeSquare) resetShadeControls(color);
       }
+
+      function syncColorPlane(color) {
+        const hsv = rgbToHsv(color);
+        pickerSaturation = hsv.s;
+        pickerValue = hsv.v;
+        hueSlider.value = Math.round(hsv.h) % 360;
+        colorPlane.style.setProperty('--picker-hue', `${hsv.h}deg`);
+        colorPlane.style.setProperty('--picker-saturation', `${hsv.s * 100}%`);
+        colorPlane.style.setProperty('--picker-value', `${(1 - hsv.v) * 100}%`);
+      }
+
+      function updateColorFromPlane() {
+        const color = hsvToHex(Number(hueSlider.value), pickerSaturation, pickerValue);
+        colorPlane.style.setProperty('--picker-hue', `${hueSlider.value}deg`);
+        colorPlane.style.setProperty('--picker-saturation', `${pickerSaturation * 100}%`);
+        colorPlane.style.setProperty('--picker-value', `${(1 - pickerValue) * 100}%`);
+        applyRgb(color);
+      }
+
+      function selectPlaneColor(event) {
+        const bounds = colorPlane.getBoundingClientRect();
+        pickerSaturation = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
+        pickerValue = 1 - Math.max(0, Math.min(1, (event.clientY - bounds.top) / bounds.height));
+        updateColorFromPlane();
+      }
+
+      colorPlane.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0) return;
+        colorPlane.setPointerCapture(event.pointerId);
+        selectPlaneColor(event);
+      });
+      colorPlane.addEventListener('pointermove', (event) => {
+        if (colorPlane.hasPointerCapture(event.pointerId)) selectPlaneColor(event);
+      });
+      colorPlane.addEventListener('keydown', (event) => {
+        const step = event.shiftKey ? 0.05 : 0.01;
+        if (event.key === 'ArrowLeft') pickerSaturation = Math.max(0, pickerSaturation - step);
+        else if (event.key === 'ArrowRight') pickerSaturation = Math.min(1, pickerSaturation + step);
+        else if (event.key === 'ArrowDown') pickerValue = Math.max(0, pickerValue - step);
+        else if (event.key === 'ArrowUp') pickerValue = Math.min(1, pickerValue + step);
+        else return;
+        event.preventDefault();
+        updateColorFromPlane();
+      });
+      hueSlider.addEventListener('input', updateColorFromPlane);
+
+      function resetShadeControls(color) {
+        shadeBaseColor = color;
+        shadeSlider.value = 50;
+        shadeSlider.style.background = `linear-gradient(to right, ${shadeColor(color, -0.6)}, ${color} 50%, ${shadeColor(color, 0.6)})`;
+      }
+
+      copyHexButton.addEventListener('click', async () => {
+        if (!activeSquare) return;
+        const color = activeSquare.dataset.color.toUpperCase();
+        try {
+          await navigator.clipboard.writeText(color);
+          copyHexButton.textContent = 'Copied';
+          window.setTimeout(() => { copyHexButton.textContent = 'Copy HEX'; }, 1200);
+        } catch (_) {
+          copyHexButton.textContent = 'Copy unavailable';
+          window.setTimeout(() => { copyHexButton.textContent = 'Copy HEX'; }, 1600);
+        }
+      });
 
       function syncCmykControls(cmyk) {
         document.querySelectorAll('#channels .channel-row').forEach((row) => {
@@ -450,7 +513,6 @@
       }
 
       function openPicker(square) {
-        closeShades();
         activeSquare = square;
         nameInput.value = square.dataset.name || '';
         syncCmykControls(square.cmyk);
@@ -460,13 +522,6 @@
         nameInput.focus();
       }
 
-      function closeShades(restoreFocus = false) {
-        const square = activeShadesSquare;
-        activeShadesSquare = null;
-        shadesPanel.hidden = true;
-        if (restoreFocus && square?.isConnected) square.querySelector('.shades-button').focus();
-      }
-
       function shadeColor(color, amount) {
         const rgb = [1, 3, 5].map((index) => parseInt(color.slice(index, index + 2), 16));
         const target = amount < 0 ? 0 : 255;
@@ -474,27 +529,14 @@
           .toString(16).padStart(2, '0')).join('')}`;
       }
 
-      function openShades(square) {
-        closePicker();
-        activeShadesSquare = square;
-        shadeBaseColor = square.dataset.color;
-        shadeSlider.value = 50;
-        shadeSlider.style.background = `linear-gradient(to right, ${shadeColor(shadeBaseColor, -0.6)}, ${shadeBaseColor} 50%, ${shadeColor(shadeBaseColor, 0.6)})`;
-        shadePreview.style.setProperty('--preview-color', shadeBaseColor);
-        shadeHex.textContent = shadeBaseColor.toUpperCase();
-        shadesPanel.hidden = false;
-        positionPicker();
-        shadeSlider.focus();
-      }
-
       shadeSlider.addEventListener('input', () => {
-        if (!activeShadesSquare) return;
+        if (!activeSquare) return;
         const amount = (Number(shadeSlider.value) - 50) / 50 * 0.6;
         const color = shadeColor(shadeBaseColor, amount);
-        activeShadesSquare.cmyk = hexToCmyk(color);
-        setSquareColor(activeShadesSquare, color);
-        shadePreview.style.setProperty('--preview-color', color);
-        shadeHex.textContent = color.toUpperCase();
+        activeSquare.cmyk = hexToCmyk(color);
+        setSquareColor(activeSquare, color);
+        previewSwatch.style.setProperty('--preview-color', color);
+        previewHex.textContent = color.toUpperCase();
         saveState();
       });
 
@@ -517,6 +559,69 @@
         syncPickerColor(color);
         saveState();
       }
+
+      if ('EyeDropper' in window) {
+        stealScreenButton.hidden = false;
+        stealScreenButton.addEventListener('click', async () => {
+          try {
+            const { sRGBHex } = await new EyeDropper().open();
+            const color = sRGBHex.startsWith('#') ? sRGBHex.toLowerCase()
+              : `#${sRGBHex.match(/\d+/g).slice(0, 3).map((n) => Number(n).toString(16).padStart(2, '0')).join('')}`;
+            applyRgb(color);
+          } catch {
+            // Picking was cancelled.
+          }
+        });
+      }
+
+      function loadStealImage(file) {
+        if (!file?.type.startsWith('image/')) return;
+        const url = URL.createObjectURL(file);
+        const image = new Image();
+        image.onload = () => {
+          const scale = Math.min(1, 800 / Math.max(image.naturalWidth, image.naturalHeight));
+          stealCanvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+          stealCanvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+          stealContext.drawImage(image, 0, 0, stealCanvas.width, stealCanvas.height);
+          URL.revokeObjectURL(url);
+          stealCanvas.hidden = false;
+          stealDrop.hidden = true;
+          positionPicker();
+        };
+        image.src = url;
+      }
+
+      function stealFromCanvas(event) {
+        const bounds = stealCanvas.getBoundingClientRect();
+        const x = Math.floor(Math.max(0, Math.min(bounds.width - 1, event.clientX - bounds.left)) * stealCanvas.width / bounds.width);
+        const y = Math.floor(Math.max(0, Math.min(bounds.height - 1, event.clientY - bounds.top)) * stealCanvas.height / bounds.height);
+        const [r, g, b] = stealContext.getImageData(x, y, 1, 1).data;
+        applyRgb(`#${[r, g, b].map((channel) => channel.toString(16).padStart(2, '0')).join('')}`);
+      }
+
+      document.querySelector('#steal-upload').addEventListener('click', () => stealFileInput.click());
+      stealFileInput.addEventListener('change', () => { loadStealImage(stealFileInput.files[0]); stealFileInput.value = ''; });
+      [stealDrop, stealCanvas].forEach((target) => {
+        target.addEventListener('dragover', (event) => { event.preventDefault(); stealDrop.classList.add('dragging'); });
+        target.addEventListener('dragleave', () => stealDrop.classList.remove('dragging'));
+        target.addEventListener('drop', (event) => {
+          event.preventDefault();
+          stealDrop.classList.remove('dragging');
+          loadStealImage(event.dataTransfer.files[0]);
+        });
+      });
+      document.addEventListener('paste', (event) => {
+        if (!activeSquare || document.querySelector('#steal-panel').hidden) return;
+        const item = [...event.clipboardData.items].find((entry) => entry.type.startsWith('image/'));
+        if (item) loadStealImage(item.getAsFile());
+      });
+      stealCanvas.addEventListener('pointerdown', (event) => {
+        stealCanvas.setPointerCapture(event.pointerId);
+        stealFromCanvas(event);
+      });
+      stealCanvas.addEventListener('pointermove', (event) => {
+        if (stealCanvas.hasPointerCapture(event.pointerId)) stealFromCanvas(event);
+      });
 
       pickerTabs.forEach((tab, index) => {
         tab.addEventListener('click', () => setPickerTab(tab));
@@ -543,25 +648,6 @@
         number.addEventListener('change', () => { number.value = range.value; });
       });
 
-      document.querySelectorAll('#rgb-channels .channel-row').forEach((row) => {
-        const range = row.querySelector('input[type="range"]');
-        const number = row.querySelector('input[type="number"]');
-        range.addEventListener('input', () => {
-          number.value = range.value;
-          const rgb = Object.fromEntries([...document.querySelectorAll('#rgb-channels .channel-row')].map((item) => [
-            item.dataset.rgbChannel, Number(item.querySelector('input[type="range"]').value)
-          ]));
-          applyRgb(rgbToHex(rgb));
-        });
-        number.addEventListener('input', () => {
-          if (number.value === '') return;
-          range.value = Math.max(0, Math.min(255, Math.round(Number(number.value))));
-          range.dispatchEvent(new Event('input'));
-        });
-        number.addEventListener('change', () => { number.value = range.value; });
-      });
-      rgbColorPicker.addEventListener('input', () => applyRgb(rgbColorPicker.value));
-
       nameInput.addEventListener('input', () => {
         if (!activeSquare) return;
         activeSquare.dataset.name = nameInput.value;
@@ -571,45 +657,23 @@
         saveState();
       });
       document.querySelector('#picker-close').addEventListener('click', () => closePicker(true));
-      document.querySelector('#shades-close').addEventListener('click', () => closeShades(true));
       document.addEventListener('pointerdown', (event) => {
         if (activeSquare && !pickerPanel.contains(event.target) && !activeSquare.contains(event.target)) closePicker();
-        if (activeShadesSquare && !shadesPanel.contains(event.target) && !activeShadesSquare.contains(event.target)) closeShades();
       });
       document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && activeSquare) closePicker(true);
-        if (event.key === 'Escape' && activeShadesSquare) closeShades(true);
       });
 
-      function setBackground(color) {
-        backgroundPicker.value = color;
-        document.documentElement.style.setProperty('--background-color', color);
-        const channels = [1, 3, 5].map((index) => parseInt(color.slice(index, index + 2), 16) / 255)
-          .map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
-        const luminance = channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
-        const textColor = luminance < 0.179 ? '#fff' : '#292824';
-        document.documentElement.style.setProperty('--text-color', textColor);
-        document.documentElement.style.setProperty('--muted-color', textColor);
-        document.documentElement.style.setProperty('--button-background', textColor === '#fff' ? '#fff' : '#292824');
-        document.documentElement.style.setProperty('--button-foreground', textColor === '#fff' ? '#292824' : '#fff');
-        document.documentElement.style.setProperty('--button-hover', textColor === '#fff' ? '#e7e7e7' : '#48443d');
-      }
-
-      function loadBackground() {
-        try {
-          const saved = localStorage.getItem(backgroundKey);
-          return saved && /^#[0-9a-f]{6}$/i.test(saved) ? saved : defaultBackground;
-        } catch (_) { return defaultBackground; }
-      }
       function saveState() {
         const state = [...grid.children].map((square) => ({
           color: square.dataset.color,
           cmyk: square.cmyk,
-          name: square.dataset.name || '',
-          columns: Number(square.dataset.columns),
-          rows: Number(square.dataset.rows)
+          name: square.dataset.name || ''
         }));
-        try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch (_) {}
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(state));
+          localStorage.setItem(layoutKey, JSON.stringify({ count: state.length, columns: layoutColumns, rows: layoutRows }));
+        } catch (_) {}
       }
 
       function loadState() {
@@ -620,7 +684,6 @@
           if (!Array.isArray(state)) return null;
           return state.filter((item) =>
             item && /^#[0-9a-f]{6}$/i.test(item.color)
-            && [1, 2].includes(item.columns) && [1, 2].includes(item.rows)
           ).map((item) => ({
             ...item,
             cmyk: validCmyk(item.cmyk) ? item.cmyk : hexToCmyk(item.color),
@@ -629,10 +692,34 @@
         } catch (_) { return null; }
       }
 
+      function loadLayout() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(layoutKey));
+          if (!saved || saved.count !== grid.children.length) return;
+          if (Array.isArray(saved.columns) && saved.columns.every((value) => Number.isFinite(value) && value > 0)) layoutColumns = saved.columns;
+          if (Array.isArray(saved.rows) && saved.rows.every((value) => Number.isFinite(value) && value > 0)) layoutRows = saved.rows;
+        } catch (_) {}
+      }
+
       function updateGrid() {
-        const maxColumns = window.innerWidth <= 600 ? 2 : window.innerWidth <= 900 ? 3 : 4;
-        const neededColumns = [...grid.children].reduce((sum, square) => sum + Number(square.dataset.columns), 0);
-        grid.style.setProperty('--columns', Math.max(1, Math.min(maxColumns, neededColumns)));
+        const count = grid.children.length;
+        const aspect = grid.clientWidth / Math.max(1, grid.clientHeight);
+        columnCount = Math.max(1, Math.min(count, Math.round(Math.sqrt(count * aspect))));
+        rowCount = Math.max(1, Math.ceil(count / columnCount));
+        if (layoutColumns.length !== columnCount) layoutColumns = Array(columnCount).fill(1);
+        if (layoutRows.length !== rowCount) layoutRows = Array(rowCount).fill(1);
+        grid.style.gridTemplateColumns = layoutColumns.map((value) => `minmax(0, ${value}fr)`).join(' ');
+        grid.style.gridTemplateRows = layoutRows.map((value) => `minmax(0, ${value}fr)`).join(' ');
+        [...grid.children].forEach((square, index) => {
+          const column = index % columnCount;
+          const row = Math.floor(index / columnCount);
+          const span = index === count - 1 ? columnCount - column : 1;
+          square.style.gridColumn = `span ${span}`;
+          square.querySelector('.resize-left').hidden = column === 0;
+          square.querySelector('.resize-right').hidden = column + span === columnCount;
+          square.querySelector('.resize-top').hidden = row === 0;
+          square.querySelector('.resize-bottom').hidden = row === rowCount - 1;
+        });
       }
 
       function updateLabels() {
@@ -640,16 +727,16 @@
           const number = index + 1;
           square.querySelector('.square-picker').setAttribute('aria-label', `Edit color for square ${number}`);
           square.querySelector('.remove-button').setAttribute('aria-label', `Remove square ${number}`);
-          square.querySelector('.shades-button').setAttribute('aria-label', `See shades of square ${number}`);
-          square.querySelector('.drag-handle').setAttribute('aria-label', `Move square ${number}; drag or use arrow keys`);
-          square.querySelector('.column-button').setAttribute('aria-label', `Make square ${number} ${square.dataset.columns === '1' ? 'two columns' : 'one column'} wide`);
-          square.querySelector('.row-button').setAttribute('aria-label', `Make square ${number} ${square.dataset.rows === '1' ? 'two rows' : 'one row'} tall`);
+          ['left', 'right', 'top', 'bottom'].forEach((side) => {
+            square.querySelector(`.resize-${side}`).setAttribute('aria-label', `Resize ${side} edge of square ${number}`);
+          });
         });
       }
 
       function animateReorder(change) {
         const before = new Map([...grid.children].map((square) => [square, square.getBoundingClientRect()]));
         change();
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
         [...grid.children].forEach((square) => {
           if (square.classList.contains('is-dragging')) return;
           const old = before.get(square);
@@ -664,11 +751,70 @@
         });
       }
 
-      function startDrag(event, square) {
+      function adjustBoundary(axis, boundary, delta, startWeights) {
+        const weights = axis === 'x' ? layoutColumns : layoutRows;
+        const size = axis === 'x' ? grid.clientWidth : grid.clientHeight;
+        const totalWeight = startWeights.reduce((sum, value) => sum + value, 0);
+        const pair = startWeights[boundary] + startWeights[boundary + 1];
+        const minimum = Math.min(48 / Math.max(1, size) * totalWeight, pair / 3);
+        const first = Math.max(minimum, Math.min(pair - minimum,
+          startWeights[boundary] + delta / Math.max(1, size) * totalWeight));
+        weights[boundary] = first;
+        weights[boundary + 1] = pair - first;
+        updateGrid();
+        positionPicker();
+      }
+
+      function resizeBoundary(event, square, side) {
         if (event.button !== 0) return;
         event.preventDefault();
+        event.currentTarget.focus();
         if (activeSquare) closePicker();
-        if (activeShadesSquare) closeShades();
+        const index = [...grid.children].indexOf(square);
+        const column = index % columnCount;
+        const row = Math.floor(index / columnCount);
+        const axis = side === 'left' || side === 'right' ? 'x' : 'y';
+        const boundary = axis === 'x' ? column - (side === 'left' ? 1 : 0)
+          : row - (side === 'top' ? 1 : 0);
+        const start = axis === 'x' ? event.clientX : event.clientY;
+        const startWeights = [...(axis === 'x' ? layoutColumns : layoutRows)];
+
+        function move(moveEvent) {
+          if (moveEvent.pointerId !== event.pointerId) return;
+          adjustBoundary(axis, boundary, (axis === 'x' ? moveEvent.clientX : moveEvent.clientY) - start, startWeights);
+        }
+
+        function finish(endEvent) {
+          if (endEvent.pointerId !== event.pointerId) return;
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', finish);
+          window.removeEventListener('pointercancel', finish);
+          saveState();
+        }
+
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', finish);
+        window.addEventListener('pointercancel', finish);
+      }
+
+      function resizeWithKeyboard(event, square, side) {
+        const axis = side === 'left' || side === 'right' ? 'x' : 'y';
+        const direction = axis === 'x'
+          ? event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0
+          : event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
+        if (!direction) return;
+        event.preventDefault();
+        const index = [...grid.children].indexOf(square);
+        const boundary = axis === 'x' ? index % columnCount - (side === 'left' ? 1 : 0)
+          : Math.floor(index / columnCount) - (side === 'top' ? 1 : 0);
+        const weights = [...(axis === 'x' ? layoutColumns : layoutRows)];
+        adjustBoundary(axis, boundary, direction * 16, weights);
+        saveState();
+      }
+
+      function startDrag(event, square) {
+        if (event.button !== 0) return;
+        if (activeSquare) closePicker();
         const startX = event.clientX;
         const startY = event.clientY;
         let ghost = null;
@@ -711,6 +857,7 @@
           animateReorder(() => {
             if (after) target.after(square);
             else target.before(square);
+            updateGrid();
           });
           updateLabels();
         }
@@ -723,6 +870,8 @@
           if (ghost) {
             ghost.remove();
             square.classList.remove('is-dragging');
+            square.suppressPickerClick = true;
+            window.setTimeout(() => { square.suppressPickerClick = false; }, 100);
             saveState();
           }
         }
@@ -732,37 +881,29 @@
         window.addEventListener('pointercancel', finish);
       }
 
-      function createSquare(color, columns = 1, rows = 1, cmyk = hexToCmyk(color), name = '') {
+      function createSquare(color, cmyk = hexToCmyk(color), name = '') {
         const square = document.createElement('div');
         const picker = document.createElement('button');
         const nameLabel = document.createElement('span');
-        const dragHandle = document.createElement('button');
         const removeButton = document.createElement('button');
-        const shadesButton = document.createElement('button');
-        const spanControls = document.createElement('div');
-        const columnButton = document.createElement('button');
-        const rowButton = document.createElement('button');
+        const resizeHandles = ['left', 'right', 'top', 'bottom'].map((side) => {
+          const button = document.createElement('button');
+          button.className = `square-control resize-handle resize-${side}`;
+          button.type = 'button';
+          button.title = `Drag to resize ${side} edge`;
+          button.addEventListener('pointerdown', (event) => resizeBoundary(event, square, side));
+          button.addEventListener('keydown', (event) => resizeWithKeyboard(event, square, side));
+          return button;
+        });
 
         square.className = 'square';
         square.cmyk = cmyk;
         square.dataset.name = name;
         setSquareColor(square, color);
-        square.dataset.columns = columns;
-        square.dataset.rows = rows;
-        square.style.setProperty('--col-span', columns);
-        square.style.setProperty('--row-span', rows);
         picker.className = 'square-picker';
         picker.type = 'button';
-        picker.addEventListener('click', () => openPicker(square));
-        nameLabel.className = 'square-name';
-        nameLabel.textContent = name;
-        nameLabel.hidden = !name;
-
-        dragHandle.className = 'square-control drag-handle';
-        dragHandle.type = 'button';
-        dragHandle.textContent = '☰';
-        dragHandle.addEventListener('pointerdown', (event) => startDrag(event, square));
-        dragHandle.addEventListener('keydown', (event) => {
+        picker.addEventListener('pointerdown', (event) => startDrag(event, square));
+        picker.addEventListener('keydown', (event) => {
           const forward = event.key === 'ArrowRight' || event.key === 'ArrowDown';
           const backward = event.key === 'ArrowLeft' || event.key === 'ArrowUp';
           if (!forward && !backward) return;
@@ -772,17 +913,28 @@
           animateReorder(() => {
             if (forward) neighbor.after(square);
             else neighbor.before(square);
+            updateGrid();
           });
           updateLabels();
           saveState();
         });
+        picker.addEventListener('click', (event) => {
+          if (square.suppressPickerClick) {
+            event.preventDefault();
+            square.suppressPickerClick = false;
+            return;
+          }
+          openPicker(square);
+        });
+        nameLabel.className = 'square-name';
+        nameLabel.textContent = name;
+        nameLabel.hidden = !name;
 
         removeButton.className = 'square-control remove-button';
         removeButton.type = 'button';
         removeButton.textContent = '×';
         removeButton.addEventListener('click', () => {
           if (activeSquare === square) closePicker();
-          if (activeShadesSquare === square) closeShades();
           const nextFocus = square.nextElementSibling?.querySelector('.remove-button')
             || square.previousElementSibling?.querySelector('.remove-button')
             || addButton;
@@ -795,33 +947,7 @@
           nextFocus.focus();
         });
 
-        shadesButton.className = 'square-control shades-button';
-        shadesButton.type = 'button';
-        shadesButton.textContent = '◐';
-        shadesButton.title = 'See shades';
-        shadesButton.addEventListener('click', () => openShades(square));
-
-        function makeSpanButton(button, axis, symbol) {
-          button.className = `square-control span-button ${axis === 'columns' ? 'column-button' : 'row-button'}`;
-          button.type = 'button';
-          button.textContent = `${symbol} ${square.dataset[axis]}`;
-          button.addEventListener('click', () => {
-            const value = square.dataset[axis] === '1' ? 2 : 1;
-            animateReorder(() => {
-              square.dataset[axis] = value;
-              square.style.setProperty(axis === 'columns' ? '--col-span' : '--row-span', value);
-              updateGrid();
-            });
-            button.textContent = `${symbol} ${value}`;
-            updateLabels();
-            saveState();
-          });
-        }
-        makeSpanButton(columnButton, 'columns', '↔');
-        makeSpanButton(rowButton, 'rows', '↕');
-        spanControls.className = 'span-controls';
-        spanControls.append(columnButton, rowButton);
-        square.append(picker, nameLabel, dragHandle, removeButton, shadesButton, spanControls);
+        square.append(picker, nameLabel, removeButton, ...resizeHandles);
         grid.append(square);
       }
 
@@ -834,27 +960,29 @@
 
       function render(state) {
         if (activeSquare) closePicker();
-        if (activeShadesSquare) closeShades();
         grid.replaceChildren();
-        (state ?? [{ color: colors[0], columns: 1, rows: 1 }, { color: colors[1], columns: 1, rows: 1 }])
-          .forEach(({ color, columns, rows, cmyk, name }) => createSquare(color, columns, rows, cmyk, name));
+        (state ?? [{ color: colors[0] }, { color: colors[1] }])
+          .forEach(({ color, cmyk, name }) => createSquare(color, cmyk, name));
+        layoutColumns = [];
+        layoutRows = [];
+        loadLayout();
         updateGrid();
         updateLabels();
       }
 
-      backgroundPicker.addEventListener('input', () => {
-        setBackground(backgroundPicker.value);
-        try { localStorage.setItem(backgroundKey, backgroundPicker.value); } catch (_) {}
-      });
       addButton.addEventListener('click', addSquare);
       window.addEventListener('resize', () => { updateGrid(); positionPicker(); });
       window.addEventListener('scroll', positionPicker, true);
       window.addEventListener('storage', (event) => {
         if (event.key === storageKey) render(loadState());
-        if (event.key === backgroundKey) setBackground(loadBackground());
+        if (event.key === layoutKey) {
+          layoutColumns = [];
+          layoutRows = [];
+          loadLayout();
+          updateGrid();
+        }
       });
       render(loadState());
-      setBackground(loadBackground());
     </script>
   </body>
 </html>
