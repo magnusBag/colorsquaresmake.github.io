@@ -9,8 +9,8 @@
       :root {
         color-scheme: light;
         font-family: Arial, Helvetica, sans-serif;
-        background: #f7f5f0;
-        color: #292824;
+        background: var(--background-color, #f7f5f0);
+        color: var(--text-color, #292824);
       }
 
       * { box-sizing: border-box; }
@@ -43,10 +43,42 @@
 
       .header-note, .hint {
         margin: 0;
-        color: #77736c;
+        color: var(--muted-color, #77736c);
         font-size: 12px;
         letter-spacing: 0.04em;
       }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+      }
+
+      .background-picker {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 7px 5px 12px;
+        border-radius: 20px;
+        background: #fff;
+        color: #292824;
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+        pointer-events: auto;
+      }
+
+      .background-picker input {
+        width: 32px;
+        height: 28px;
+        padding: 2px;
+        border: 1px solid #77736c;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+      }
+
+      .background-picker input:focus-visible { outline: 3px solid #292824; outline-offset: 2px; }
 
       main {
         display: flex;
@@ -195,19 +227,19 @@
         padding: 0;
         border: 0;
         border-radius: 50%;
-        background: #292824;
-        color: #fff;
+        background: var(--button-background, #292824);
+        color: var(--button-foreground, #fff);
         font: 300 39px/1 Arial, Helvetica, sans-serif;
         cursor: pointer;
         box-shadow: 0 8px 22px rgba(41, 40, 36, 0.18);
         transition: transform 180ms ease, background 180ms ease;
       }
 
-      .add-button:hover { transform: rotate(90deg); background: #48443d; }
-      .add-button:focus-visible { outline: 3px solid #292824; outline-offset: 4px; }
+      .add-button:hover { transform: rotate(90deg); background: var(--button-hover, #48443d); }
+      .add-button:focus-visible { outline: 3px solid var(--text-color, #292824); outline-offset: 4px; }
 
       @media (max-width: 600px) {
-        .site-header { padding: 24px; }
+        .site-header { padding: 24px; gap: 8px; }
         .header-note { display: none; }
         main { padding: 90px 20px 110px; }
         .grid { gap: 14px; --cell-size: min(39vw, 170px); }
@@ -223,7 +255,10 @@
   <body>
     <header class="site-header">
       <h1 class="brand">Color Squares</h1>
-      <p class="header-note">A little space to play with color</p>
+      <div class="header-actions">
+        <p class="header-note">A little space to play with color</p>
+        <label class="background-picker">Background <input id="background-color" type="color" value="#f7f5f0" /></label>
+      </div>
     </header>
 
     <main>
@@ -246,6 +281,9 @@
       const addButton = document.querySelector('#add-square');
       const colors = ['#f27864', '#6769dd', '#eebd59', '#74b99b', '#cb8bbd', '#75a8cb'];
       const storageKey = 'color-squares-state-v1';
+      const backgroundKey = 'color-squares-background-v1';
+      const defaultBackground = '#f7f5f0';
+      const backgroundPicker = document.querySelector('#background-color');
       const pickerPanel = document.querySelector('#cmyk-picker');
       const nameInput = document.querySelector('#color-name');
       const previewSwatch = document.querySelector('#preview-swatch');
@@ -371,6 +409,26 @@
         if (event.key === 'Escape' && activeSquare) closePicker(true);
       });
 
+      function setBackground(color) {
+        backgroundPicker.value = color;
+        document.documentElement.style.setProperty('--background-color', color);
+        const channels = [1, 3, 5].map((index) => parseInt(color.slice(index, index + 2), 16) / 255)
+          .map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+        const luminance = channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+        const textColor = luminance < 0.179 ? '#fff' : '#292824';
+        document.documentElement.style.setProperty('--text-color', textColor);
+        document.documentElement.style.setProperty('--muted-color', textColor);
+        document.documentElement.style.setProperty('--button-background', textColor === '#fff' ? '#fff' : '#292824');
+        document.documentElement.style.setProperty('--button-foreground', textColor === '#fff' ? '#292824' : '#fff');
+        document.documentElement.style.setProperty('--button-hover', textColor === '#fff' ? '#e7e7e7' : '#48443d');
+      }
+
+      function loadBackground() {
+        try {
+          const saved = localStorage.getItem(backgroundKey);
+          return saved && /^#[0-9a-f]{6}$/i.test(saved) ? saved : defaultBackground;
+        } catch (_) { return defaultBackground; }
+      }
       function saveState() {
         const state = [...grid.children].map((square) => ({
           color: square.dataset.color,
@@ -601,13 +659,19 @@
         updateLabels();
       }
 
+      backgroundPicker.addEventListener('input', () => {
+        setBackground(backgroundPicker.value);
+        try { localStorage.setItem(backgroundKey, backgroundPicker.value); } catch (_) {}
+      });
       addButton.addEventListener('click', addSquare);
       window.addEventListener('resize', () => { updateGrid(); positionPicker(); });
       window.addEventListener('scroll', positionPicker, true);
       window.addEventListener('storage', (event) => {
         if (event.key === storageKey) render(loadState());
+        if (event.key === backgroundKey) setBackground(loadBackground());
       });
       render(loadState());
+      setBackground(loadBackground());
     </script>
   </body>
 </html>
