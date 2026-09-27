@@ -143,7 +143,7 @@
         position: absolute;
         bottom: 12px;
         left: 12px;
-        max-width: calc(100% - 24px);
+        max-width: calc(100% - 56px);
         overflow: hidden;
         color: var(--square-label-color);
         font-size: 12px;
@@ -153,7 +153,7 @@
         pointer-events: none;
       }
 
-      .cmyk-popover {
+      .cmyk-popover, .shades-popover {
         position: fixed;
         z-index: 20;
         width: 310px;
@@ -166,18 +166,31 @@
         box-shadow: 0 20px 55px rgba(41, 40, 36, 0.2);
       }
 
-      .cmyk-popover[hidden] { display: none; }
+      .cmyk-popover[hidden], .shades-popover[hidden] { display: none; }
       .picker-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
       .picker-heading h2 { margin: 0; font-size: 15px; }
       .picker-close { border: 0; background: transparent; color: #292824; font-size: 24px; line-height: 1; cursor: pointer; }
       .picker-name { display: grid; gap: 6px; margin-bottom: 16px; font-size: 12px; font-weight: 700; }
       .picker-name input { width: 100%; padding: 9px 10px; border: 1px solid #c8c4bd; border-radius: 6px; font: inherit; }
+      .picker-tabs { display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 1px solid #e8e5df; }
+      .picker-tab { padding: 8px 14px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #77736c; font: 700 12px Arial, Helvetica, sans-serif; cursor: pointer; }
+      .picker-tab[aria-selected="true"] { border-bottom-color: #292824; color: #292824; }
+      .picker-tab:focus-visible { outline: 3px solid #292824; outline-offset: 2px; }
       .channel-row { display: grid; grid-template-columns: 18px minmax(0, 1fr) 55px; align-items: center; gap: 10px; margin: 11px 0; font-size: 13px; font-weight: 700; }
       .channel-row input[type="range"] { width: 100%; accent-color: #292824; }
       .channel-row input[type="number"] { width: 55px; padding: 6px 4px; border: 1px solid #c8c4bd; border-radius: 5px; font: inherit; text-align: center; }
       .picker-preview { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #e8e5df; font-size: 12px; }
       .preview-swatch { width: 28px; height: 28px; border: 1px solid rgba(0,0,0,.12); border-radius: 5px; background: var(--preview-color); }
       .picker-note { margin: 10px 0 0; color: #77736c; font-size: 11px; line-height: 1.4; }
+      .rgb-color-picker { display: flex; align-items: center; gap: 10px; margin-top: 15px; font-size: 12px; font-weight: 700; }
+      .rgb-color-picker input { width: 42px; height: 34px; padding: 2px; border: 1px solid #c8c4bd; border-radius: 6px; background: #fff; cursor: pointer; }
+      .rgb-color-picker input:focus-visible { outline: 3px solid #292824; outline-offset: 2px; }
+      .shade-slider { appearance: none; display: block; width: 100%; height: 16px; margin: 12px 0 8px; border-radius: 12px; cursor: pointer; }
+      .shade-slider::-moz-range-track { height: 16px; border-radius: 12px; background: transparent; }
+      .shade-slider::-webkit-slider-thumb { appearance: none; width: 22px; height: 22px; border: 3px solid #fff; border-radius: 50%; background: #292824; box-shadow: 0 0 0 1px #292824; }
+      .shade-slider::-moz-range-thumb { width: 16px; height: 16px; border: 3px solid #fff; border-radius: 50%; background: #292824; box-shadow: 0 0 0 1px #292824; }
+      .shade-slider:focus-visible { outline: 3px solid #292824; outline-offset: 4px; }
+      .shade-scale { display: flex; justify-content: space-between; color: #77736c; font-size: 11px; }
 
       .square-control {
         position: absolute;
@@ -206,6 +219,7 @@
       .drag-handle { top: 8px; left: 6px; font-size: 17px; cursor: grab; touch-action: none; }
       .drag-handle:active { cursor: grabbing; }
       .remove-button { top: 8px; right: 6px; }
+      .shades-button { right: 6px; bottom: 8px; width: 30px; height: 30px; font-size: 17px; }
       .span-controls { position: absolute; z-index: 1; top: 8px; left: 50%; display: flex; gap: 4px; transform: translateX(-50%); pointer-events: none; }
       .span-button { position: static; width: 26px; height: 26px; border-radius: 16px; font-size: 11px; font-weight: 700; }
 
@@ -247,6 +261,10 @@
         .add-button { right: 22px; bottom: 22px; width: 58px; height: 58px; }
       }
 
+      @media (hover: none) {
+        .square-control { opacity: 1; pointer-events: auto; }
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .square, .add-button { transition: none; }
       }
@@ -265,15 +283,32 @@
       <div class="grid" id="grid" aria-label="Color squares"></div>
     </main>
 
-    <section class="cmyk-popover" id="cmyk-picker" role="dialog" aria-label="CMYK color picker" hidden>
+    <section class="cmyk-popover" id="cmyk-picker" role="dialog" aria-label="Color picker" hidden>
       <div class="picker-heading"><h2>Color</h2><button class="picker-close" id="picker-close" type="button" aria-label="Close color picker">×</button></div>
       <label class="picker-name">Name <input id="color-name" type="text" maxlength="80" placeholder="e.g. Nile blue" /></label>
-      <div id="channels"></div>
+      <div class="picker-tabs" role="tablist" aria-label="Color mode">
+        <button class="picker-tab" id="cmyk-tab" type="button" role="tab" aria-controls="cmyk-panel" aria-selected="true" tabindex="0">CMYK</button>
+        <button class="picker-tab" id="rgb-tab" type="button" role="tab" aria-controls="rgb-panel" aria-selected="false" tabindex="-1">RGB</button>
+      </div>
+      <div id="cmyk-panel" role="tabpanel" aria-labelledby="cmyk-tab">
+        <div id="channels"></div>
+        <p class="picker-note">Screen colors are an approximation of CMYK print colors.</p>
+      </div>
+      <div id="rgb-panel" role="tabpanel" aria-labelledby="rgb-tab" hidden>
+        <div id="rgb-channels"></div>
+        <label class="rgb-color-picker">Color picker <input id="rgb-color-picker" type="color" value="#000000" /></label>
+      </div>
       <div class="picker-preview"><span class="preview-swatch" id="preview-swatch"></span><span id="preview-hex"></span></div>
-      <p class="picker-note">Screen colors are an approximation of CMYK print colors.</p>
     </section>
 
-    <p class="hint">Click to edit CMYK · drag ☰ to move · ↔ / ↕ to resize · × to remove</p>
+    <section class="shades-popover" id="shades-picker" role="dialog" aria-label="Color shades" hidden>
+      <div class="picker-heading"><h2>Shades</h2><button class="picker-close" id="shades-close" type="button" aria-label="Close shades">×</button></div>
+      <input class="shade-slider" id="shade-slider" type="range" min="0" max="100" value="50" aria-label="Shade from darker to lighter" />
+      <div class="shade-scale"><span>Darker</span><span>Original</span><span>Lighter</span></div>
+      <div class="picker-preview"><span class="preview-swatch" id="shade-preview"></span><span id="shade-hex"></span></div>
+    </section>
+
+    <p class="hint">Click to edit color · ◐ for shades · drag ☰ to move · ↔ / ↕ to resize · × to remove</p>
     <button class="add-button" id="add-square" type="button" aria-label="Add a square" title="Add a square">+</button>
 
     <script>
@@ -285,17 +320,33 @@
       const defaultBackground = '#f7f5f0';
       const backgroundPicker = document.querySelector('#background-color');
       const pickerPanel = document.querySelector('#cmyk-picker');
+      const shadesPanel = document.querySelector('#shades-picker');
+      const shadeSlider = document.querySelector('#shade-slider');
+      const shadePreview = document.querySelector('#shade-preview');
+      const shadeHex = document.querySelector('#shade-hex');
       const nameInput = document.querySelector('#color-name');
       const previewSwatch = document.querySelector('#preview-swatch');
       const previewHex = document.querySelector('#preview-hex');
+      const rgbColorPicker = document.querySelector('#rgb-color-picker');
+      const pickerTabs = [...document.querySelectorAll('.picker-tab')];
       const channelNames = { c: 'Cyan', m: 'Magenta', y: 'Yellow', k: 'Black' };
+      const rgbChannelNames = { r: 'Red', g: 'Green', b: 'Blue' };
       let activeSquare = null;
+      let activeShadesSquare = null;
+      let shadeBaseColor = null;
 
       document.querySelector('#channels').innerHTML = Object.entries(channelNames).map(([channel, label]) => `
         <div class="channel-row" data-channel="${channel}">
           <span aria-hidden="true">${channel.toUpperCase()}</span>
           <input type="range" min="0" max="100" value="0" aria-label="${label}" />
           <input type="number" min="0" max="100" step="1" value="0" aria-label="${label} percent" />
+        </div>
+      `).join('');
+      document.querySelector('#rgb-channels').innerHTML = Object.entries(rgbChannelNames).map(([channel, label]) => `
+        <div class="channel-row" data-rgb-channel="${channel}">
+          <span aria-hidden="true">${channel.toUpperCase()}</span>
+          <input type="range" min="0" max="255" value="0" aria-label="${label}" />
+          <input type="number" min="0" max="255" step="1" value="0" aria-label="${label} value" />
         </div>
       `).join('');
 
@@ -319,6 +370,16 @@
         };
       }
 
+      function hexToRgb(hex) {
+        return Object.fromEntries(Object.keys(rgbChannelNames).map((channel, index) => [
+          channel, parseInt(hex.slice(index * 2 + 1, index * 2 + 3), 16)
+        ]));
+      }
+
+      function rgbToHex({ r, g, b }) {
+        return `#${[r, g, b].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+      }
+
       function validCmyk(value) {
         return value && Object.keys(channelNames).every((channel) =>
           Number.isInteger(value[channel]) && value[channel] >= 0 && value[channel] <= 100
@@ -332,18 +393,23 @@
         square.style.setProperty('--square-label-color', 0.2126 * r + 0.7152 * g + 0.0722 * b > 150 ? '#292824' : '#fff');
       }
 
-      function positionPicker() {
-        if (!activeSquare || pickerPanel.hidden) return;
-        const square = activeSquare.getBoundingClientRect();
-        const panel = pickerPanel.getBoundingClientRect();
-        const left = Math.max(16, Math.min(square.left, window.innerWidth - panel.width - 16));
+      function positionPopover(squareElement, panel) {
+        if (!squareElement || panel.hidden) return;
+        const square = squareElement.getBoundingClientRect();
+        const panelRect = panel.getBoundingClientRect();
+        const left = Math.max(16, Math.min(square.left, window.innerWidth - panelRect.width - 16));
         const below = square.bottom + 12;
-        const above = square.top - panel.height - 12;
-        const top = below + panel.height <= window.innerHeight - 16 ? below
+        const above = square.top - panelRect.height - 12;
+        const top = below + panelRect.height <= window.innerHeight - 16 ? below
           : above >= 16 ? above
-          : Math.max(16, Math.min(below, window.innerHeight - panel.height - 16));
-        pickerPanel.style.left = `${left}px`;
-        pickerPanel.style.top = `${top}px`;
+          : Math.max(16, Math.min(below, window.innerHeight - panelRect.height - 16));
+        panel.style.left = `${left}px`;
+        panel.style.top = `${top}px`;
+      }
+
+      function positionPicker() {
+        positionPopover(activeSquare, pickerPanel);
+        positionPopover(activeShadesSquare, shadesPanel);
       }
 
       function closePicker(restoreFocus = false) {
@@ -353,34 +419,118 @@
         if (restoreFocus && square?.isConnected) square.querySelector('.square-picker').focus();
       }
 
-      function openPicker(square) {
-        activeSquare = square;
-        nameInput.value = square.dataset.name || '';
-        document.querySelectorAll('.channel-row').forEach((row) => {
-          const value = square.cmyk[row.dataset.channel];
+      function setPickerTab(tab) {
+        pickerTabs.forEach((button) => {
+          const selected = button === tab;
+          button.setAttribute('aria-selected', String(selected));
+          button.tabIndex = selected ? 0 : -1;
+          document.getElementById(button.getAttribute('aria-controls')).hidden = !selected;
+        });
+        positionPicker();
+      }
+
+      function syncPickerColor(color) {
+        const rgb = hexToRgb(color);
+        document.querySelectorAll('#rgb-channels .channel-row').forEach((row) => {
+          const value = rgb[row.dataset.rgbChannel];
           row.querySelector('input[type="range"]').value = value;
           row.querySelector('input[type="number"]').value = value;
         });
-        previewSwatch.style.setProperty('--preview-color', square.dataset.color);
-        previewHex.textContent = square.dataset.color.toUpperCase();
+        rgbColorPicker.value = color;
+        previewSwatch.style.setProperty('--preview-color', color);
+        previewHex.textContent = color.toUpperCase();
+      }
+
+      function syncCmykControls(cmyk) {
+        document.querySelectorAll('#channels .channel-row').forEach((row) => {
+          const value = cmyk[row.dataset.channel];
+          row.querySelector('input[type="range"]').value = value;
+          row.querySelector('input[type="number"]').value = value;
+        });
+      }
+
+      function openPicker(square) {
+        closeShades();
+        activeSquare = square;
+        nameInput.value = square.dataset.name || '';
+        syncCmykControls(square.cmyk);
+        syncPickerColor(square.dataset.color);
         pickerPanel.hidden = false;
         positionPicker();
         nameInput.focus();
       }
 
+      function closeShades(restoreFocus = false) {
+        const square = activeShadesSquare;
+        activeShadesSquare = null;
+        shadesPanel.hidden = true;
+        if (restoreFocus && square?.isConnected) square.querySelector('.shades-button').focus();
+      }
+
+      function shadeColor(color, amount) {
+        const rgb = [1, 3, 5].map((index) => parseInt(color.slice(index, index + 2), 16));
+        const target = amount < 0 ? 0 : 255;
+        return `#${rgb.map((channel) => Math.round(channel + (target - channel) * Math.abs(amount))
+          .toString(16).padStart(2, '0')).join('')}`;
+      }
+
+      function openShades(square) {
+        closePicker();
+        activeShadesSquare = square;
+        shadeBaseColor = square.dataset.color;
+        shadeSlider.value = 50;
+        shadeSlider.style.background = `linear-gradient(to right, ${shadeColor(shadeBaseColor, -0.6)}, ${shadeBaseColor} 50%, ${shadeColor(shadeBaseColor, 0.6)})`;
+        shadePreview.style.setProperty('--preview-color', shadeBaseColor);
+        shadeHex.textContent = shadeBaseColor.toUpperCase();
+        shadesPanel.hidden = false;
+        positionPicker();
+        shadeSlider.focus();
+      }
+
+      shadeSlider.addEventListener('input', () => {
+        if (!activeShadesSquare) return;
+        const amount = (Number(shadeSlider.value) - 50) / 50 * 0.6;
+        const color = shadeColor(shadeBaseColor, amount);
+        activeShadesSquare.cmyk = hexToCmyk(color);
+        setSquareColor(activeShadesSquare, color);
+        shadePreview.style.setProperty('--preview-color', color);
+        shadeHex.textContent = color.toUpperCase();
+        saveState();
+      });
+
       function applyCmyk() {
         if (!activeSquare) return;
-        activeSquare.cmyk = Object.fromEntries([...document.querySelectorAll('.channel-row')].map((row) => [
+        activeSquare.cmyk = Object.fromEntries([...document.querySelectorAll('#channels .channel-row')].map((row) => [
           row.dataset.channel, Number(row.querySelector('input[type="range"]').value)
         ]));
         const color = cmykToHex(activeSquare.cmyk);
         setSquareColor(activeSquare, color);
-        previewSwatch.style.setProperty('--preview-color', color);
-        previewHex.textContent = color.toUpperCase();
+        syncPickerColor(color);
         saveState();
       }
 
-      document.querySelectorAll('.channel-row').forEach((row) => {
+      function applyRgb(color) {
+        if (!activeSquare) return;
+        activeSquare.cmyk = hexToCmyk(color);
+        setSquareColor(activeSquare, color);
+        syncCmykControls(activeSquare.cmyk);
+        syncPickerColor(color);
+        saveState();
+      }
+
+      pickerTabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => setPickerTab(tab));
+        tab.addEventListener('keydown', (event) => {
+          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+          event.preventDefault();
+          const next = event.key === 'Home' ? 0 : event.key === 'End' ? pickerTabs.length - 1
+            : (index + (event.key === 'ArrowRight' ? 1 : -1) + pickerTabs.length) % pickerTabs.length;
+          setPickerTab(pickerTabs[next]);
+          pickerTabs[next].focus();
+        });
+      });
+
+      document.querySelectorAll('#channels .channel-row').forEach((row) => {
         const range = row.querySelector('input[type="range"]');
         const number = row.querySelector('input[type="number"]');
         range.addEventListener('input', () => { number.value = range.value; applyCmyk(); });
@@ -393,6 +543,25 @@
         number.addEventListener('change', () => { number.value = range.value; });
       });
 
+      document.querySelectorAll('#rgb-channels .channel-row').forEach((row) => {
+        const range = row.querySelector('input[type="range"]');
+        const number = row.querySelector('input[type="number"]');
+        range.addEventListener('input', () => {
+          number.value = range.value;
+          const rgb = Object.fromEntries([...document.querySelectorAll('#rgb-channels .channel-row')].map((item) => [
+            item.dataset.rgbChannel, Number(item.querySelector('input[type="range"]').value)
+          ]));
+          applyRgb(rgbToHex(rgb));
+        });
+        number.addEventListener('input', () => {
+          if (number.value === '') return;
+          range.value = Math.max(0, Math.min(255, Math.round(Number(number.value))));
+          range.dispatchEvent(new Event('input'));
+        });
+        number.addEventListener('change', () => { number.value = range.value; });
+      });
+      rgbColorPicker.addEventListener('input', () => applyRgb(rgbColorPicker.value));
+
       nameInput.addEventListener('input', () => {
         if (!activeSquare) return;
         activeSquare.dataset.name = nameInput.value;
@@ -402,11 +571,14 @@
         saveState();
       });
       document.querySelector('#picker-close').addEventListener('click', () => closePicker(true));
+      document.querySelector('#shades-close').addEventListener('click', () => closeShades(true));
       document.addEventListener('pointerdown', (event) => {
         if (activeSquare && !pickerPanel.contains(event.target) && !activeSquare.contains(event.target)) closePicker();
+        if (activeShadesSquare && !shadesPanel.contains(event.target) && !activeShadesSquare.contains(event.target)) closeShades();
       });
       document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && activeSquare) closePicker(true);
+        if (event.key === 'Escape' && activeShadesSquare) closeShades(true);
       });
 
       function setBackground(color) {
@@ -466,8 +638,9 @@
       function updateLabels() {
         [...grid.children].forEach((square, index) => {
           const number = index + 1;
-          square.querySelector('.square-picker').setAttribute('aria-label', `Edit CMYK color for square ${number}`);
+          square.querySelector('.square-picker').setAttribute('aria-label', `Edit color for square ${number}`);
           square.querySelector('.remove-button').setAttribute('aria-label', `Remove square ${number}`);
+          square.querySelector('.shades-button').setAttribute('aria-label', `See shades of square ${number}`);
           square.querySelector('.drag-handle').setAttribute('aria-label', `Move square ${number}; drag or use arrow keys`);
           square.querySelector('.column-button').setAttribute('aria-label', `Make square ${number} ${square.dataset.columns === '1' ? 'two columns' : 'one column'} wide`);
           square.querySelector('.row-button').setAttribute('aria-label', `Make square ${number} ${square.dataset.rows === '1' ? 'two rows' : 'one row'} tall`);
@@ -495,6 +668,7 @@
         if (event.button !== 0) return;
         event.preventDefault();
         if (activeSquare) closePicker();
+        if (activeShadesSquare) closeShades();
         const startX = event.clientX;
         const startY = event.clientY;
         let ghost = null;
@@ -564,6 +738,7 @@
         const nameLabel = document.createElement('span');
         const dragHandle = document.createElement('button');
         const removeButton = document.createElement('button');
+        const shadesButton = document.createElement('button');
         const spanControls = document.createElement('div');
         const columnButton = document.createElement('button');
         const rowButton = document.createElement('button');
@@ -607,6 +782,7 @@
         removeButton.textContent = '×';
         removeButton.addEventListener('click', () => {
           if (activeSquare === square) closePicker();
+          if (activeShadesSquare === square) closeShades();
           const nextFocus = square.nextElementSibling?.querySelector('.remove-button')
             || square.previousElementSibling?.querySelector('.remove-button')
             || addButton;
@@ -618,6 +794,12 @@
           saveState();
           nextFocus.focus();
         });
+
+        shadesButton.className = 'square-control shades-button';
+        shadesButton.type = 'button';
+        shadesButton.textContent = '◐';
+        shadesButton.title = 'See shades';
+        shadesButton.addEventListener('click', () => openShades(square));
 
         function makeSpanButton(button, axis, symbol) {
           button.className = `square-control span-button ${axis === 'columns' ? 'column-button' : 'row-button'}`;
@@ -639,7 +821,7 @@
         makeSpanButton(rowButton, 'rows', '↕');
         spanControls.className = 'span-controls';
         spanControls.append(columnButton, rowButton);
-        square.append(picker, nameLabel, dragHandle, removeButton, spanControls);
+        square.append(picker, nameLabel, dragHandle, removeButton, shadesButton, spanControls);
         grid.append(square);
       }
 
@@ -652,6 +834,7 @@
 
       function render(state) {
         if (activeSquare) closePicker();
+        if (activeShadesSquare) closeShades();
         grid.replaceChildren();
         (state ?? [{ color: colors[0], columns: 1, rows: 1 }, { color: colors[1], columns: 1, rows: 1 }])
           .forEach(({ color, columns, rows, cmyk, name }) => createSquare(color, columns, rows, cmyk, name));
