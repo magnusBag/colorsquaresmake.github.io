@@ -66,6 +66,30 @@
       }
 
       .header-note { font-size: 13px; }
+      .brand-group { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+
+      .scheme-button {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        max-width: 260px;
+        padding: 7px 11px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--chip);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        pointer-events: auto;
+      }
+
+      .scheme-button:hover, .scheme-button[aria-expanded="true"] { background: var(--surface); }
+      .scheme-button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+      .scheme-button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .scheme-button svg { flex: none; width: 12px; height: 12px; }
 
       main {
         display: flex;
@@ -331,7 +355,28 @@
       .background-swatch:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
       .background-custom { width: 36px; height: 30px; padding: 0 2px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); cursor: pointer; }
 
+      .schemes-popover { top: 82px; left: 38px; width: 300px; }
+      .scheme-list { display: grid; gap: 2px; max-height: min(320px, calc(100vh - 330px)); margin: 0 -8px; padding: 0; overflow-y: auto; list-style: none; }
+      .scheme-item { display: flex; align-items: center; gap: 4px; border-radius: 8px; }
+      .scheme-item:hover { background: var(--paper); }
+      .scheme-open { display: grid; flex: 1; gap: 6px; min-width: 0; padding: 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
+      .scheme-open:focus-visible, .scheme-delete:focus-visible, .scheme-action:focus-visible { outline: 3px solid var(--ink); outline-offset: 1px; }
+      .scheme-open-name { overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+      .scheme-item.is-active .scheme-open-name::after { content: ' · open'; color: var(--muted); font-weight: 500; }
+      .scheme-strip { display: flex; height: 14px; overflow: hidden; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+      .scheme-strip span { flex: 1; background: var(--strip-color); }
+      .scheme-delete { display: grid; flex: none; place-items: center; width: 30px; height: 30px; margin-right: 4px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; }
+      .scheme-delete:hover { background: var(--line); color: var(--ink); }
+      .scheme-delete[hidden] { display: none; }
+      .scheme-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+      .scheme-action { padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font: 700 12px var(--font); cursor: pointer; }
+      .scheme-action:hover { background: var(--paper); }
+      .scheme-action.is-primary { border-color: var(--ink); background: var(--ink); color: #fff; }
+      .scheme-action.is-primary:hover { background: #48443d; }
+      .schemes-status { min-height: 1.4em; margin: 10px 0 0; color: var(--muted); font-size: 11px; }
+
       @media (max-width: 600px) {
+        .schemes-popover { top: 70px; left: 16px; }
         .options-button, .capture-button { right: 92px; bottom: 29px; }
         .capture-button { right: 148px; }
         .copy-picture-button { right: 204px; bottom: 33px; }
@@ -356,9 +401,29 @@
   </head>
   <body>
     <header class="site-header">
-      <h1 class="brand">Color Squares</h1>
+      <div class="brand-group">
+        <h1 class="brand">Color Squares</h1>
+        <button class="scheme-button" id="scheme-button" type="button" aria-expanded="false" aria-controls="schemes-panel" title="Switch color scheme">
+          <span id="scheme-button-name">Scheme 1</span>
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
+        </button>
+      </div>
       <p class="header-note">A little space to play with color</p>
     </header>
+
+    <section class="cmyk-popover schemes-popover" id="schemes-panel" role="dialog" aria-label="Color schemes" hidden>
+      <div class="picker-heading"><h2>Schemes</h2><button class="picker-close" id="schemes-close" type="button" aria-label="Close schemes">×</button></div>
+      <label class="picker-name">Name of this scheme <input id="scheme-name" type="text" maxlength="80" /></label>
+      <ul class="scheme-list" id="scheme-list" aria-label="Saved schemes"></ul>
+      <div class="scheme-actions">
+        <button class="scheme-action is-primary" id="scheme-new" type="button">New scheme</button>
+        <button class="scheme-action" id="scheme-duplicate" type="button">Duplicate</button>
+        <button class="scheme-action" id="scheme-export" type="button">Save to file</button>
+        <button class="scheme-action" id="scheme-import" type="button">Load from file…</button>
+        <input id="scheme-file" type="file" accept="application/json,.json" hidden />
+      </div>
+      <p class="schemes-status" id="schemes-status" role="status"></p>
+    </section>
 
     <main>
       <div class="grid-frame" id="grid-frame">
@@ -807,41 +872,53 @@
         if (event.key === 'Escape' && activeSquare) closePicker(true);
       });
 
-      function saveState() {
-        const state = [...grid.children].map((square) => ({
+      function currentSquares() {
+        return [...grid.children].map((square) => ({
           color: square.dataset.color,
           cmyk: square.cmyk,
           name: square.dataset.name || ''
         }));
+      }
+
+      function currentLayout() {
+        return { count: grid.children.length, columns: [...layoutColumns], rows: [...layoutRows] };
+      }
+
+      function saveState() {
         try {
-          localStorage.setItem(storageKey, JSON.stringify(state));
-          localStorage.setItem(layoutKey, JSON.stringify({ count: state.length, columns: layoutColumns, rows: layoutRows }));
+          localStorage.setItem(storageKey, JSON.stringify(currentSquares()));
+          localStorage.setItem(layoutKey, JSON.stringify(currentLayout()));
         } catch (_) {}
+        saveActiveScheme();
+      }
+
+      function sanitizeSquares(state) {
+        if (!Array.isArray(state)) return null;
+        return state.filter((item) =>
+          item && /^#[0-9a-f]{6}$/i.test(item.color)
+        ).map((item) => ({
+          color: item.color.toLowerCase(),
+          cmyk: validCmyk(item.cmyk) ? item.cmyk : hexToCmyk(item.color),
+          name: typeof item.name === 'string' ? item.name.slice(0, 80) : ''
+        }));
       }
 
       function loadState() {
         try {
           const saved = localStorage.getItem(storageKey);
           if (saved === null) return null;
-          const state = JSON.parse(saved);
-          if (!Array.isArray(state)) return null;
-          return state.filter((item) =>
-            item && /^#[0-9a-f]{6}$/i.test(item.color)
-          ).map((item) => ({
-            ...item,
-            cmyk: validCmyk(item.cmyk) ? item.cmyk : hexToCmyk(item.color),
-            name: typeof item.name === 'string' ? item.name.slice(0, 80) : ''
-          }));
+          return sanitizeSquares(JSON.parse(saved));
         } catch (_) { return null; }
       }
 
-      function loadLayout() {
-        try {
-          const saved = JSON.parse(localStorage.getItem(layoutKey));
-          if (!saved || saved.count !== grid.children.length) return;
-          if (Array.isArray(saved.columns) && saved.columns.every((value) => Number.isFinite(value) && value > 0)) layoutColumns = saved.columns;
-          if (Array.isArray(saved.rows) && saved.rows.every((value) => Number.isFinite(value) && value > 0)) layoutRows = saved.rows;
-        } catch (_) {}
+      function readLayout() {
+        try { return JSON.parse(localStorage.getItem(layoutKey)); } catch (_) { return null; }
+      }
+
+      function loadLayout(saved = readLayout()) {
+        if (!saved || saved.count !== grid.children.length) return;
+        if (Array.isArray(saved.columns) && saved.columns.every((value) => Number.isFinite(value) && value > 0)) layoutColumns = saved.columns;
+        if (Array.isArray(saved.rows) && saved.rows.every((value) => Number.isFinite(value) && value > 0)) layoutRows = saved.rows;
       }
 
       function updateGrid() {
@@ -1116,14 +1193,14 @@
         saveState();
       }
 
-      function render(state) {
+      function render(state, layout) {
         if (activeSquare) closePicker();
         grid.replaceChildren();
         (state ?? [{ color: colors[0] }, { color: colors[1] }])
           .forEach(({ color, cmyk, name }) => createSquare(color, cmyk, name));
         layoutColumns = [];
         layoutRows = [];
-        loadLayout();
+        loadLayout(layout);
         updateGrid();
         updateLabels();
       }
@@ -1137,7 +1214,8 @@
       const radiusValue = document.querySelector('#radius-value');
       const backgroundInput = document.querySelector('#background-input');
       const backgroundPresets = ['#f7f5f0', '#ffffff', '#e4e1da', '#292824', '#111111'];
-      const options = { gap: 0, radius: 0, background: '#f7f5f0', areaWidth: 1, areaHeight: 1 };
+      const defaultOptions = { gap: 0, radius: 0, background: '#f7f5f0', areaWidth: 1, areaHeight: 1 };
+      const options = { ...defaultOptions };
       const gridFrame = document.querySelector('#grid-frame');
 
       backgroundInput.before(...backgroundPresets.map((color) => {
@@ -1171,17 +1249,23 @@
 
       function saveOptions() {
         try { localStorage.setItem(optionsKey, JSON.stringify(options)); } catch (_) {}
+        saveActiveScheme();
+      }
+
+      function sanitizeOptions(saved) {
+        const result = { ...defaultOptions };
+        if (Number.isFinite(saved?.gap)) result.gap = Math.max(0, Math.min(60, Math.round(saved.gap)));
+        if (Number.isFinite(saved?.radius)) result.radius = Math.max(0, Math.min(80, Math.round(saved.radius)));
+        if (/^#[0-9a-f]{6}$/i.test(saved?.background)) result.background = saved.background.toLowerCase();
+        if (Number.isFinite(saved?.areaWidth)) result.areaWidth = Math.max(0.05, Math.min(1, saved.areaWidth));
+        if (Number.isFinite(saved?.areaHeight)) result.areaHeight = Math.max(0.05, Math.min(1, saved.areaHeight));
+        return result;
       }
 
       function loadOptions() {
-        try {
-          const saved = JSON.parse(localStorage.getItem(optionsKey));
-          if (Number.isFinite(saved?.gap)) options.gap = Math.max(0, Math.min(60, Math.round(saved.gap)));
-          if (Number.isFinite(saved?.radius)) options.radius = Math.max(0, Math.min(80, Math.round(saved.radius)));
-          if (/^#[0-9a-f]{6}$/i.test(saved?.background)) options.background = saved.background.toLowerCase();
-          if (Number.isFinite(saved?.areaWidth)) options.areaWidth = Math.max(0.05, Math.min(1, saved.areaWidth));
-          if (Number.isFinite(saved?.areaHeight)) options.areaHeight = Math.max(0.05, Math.min(1, saved.areaHeight));
-        } catch (_) {}
+        let saved = null;
+        try { saved = JSON.parse(localStorage.getItem(optionsKey)); } catch (_) {}
+        Object.assign(options, sanitizeOptions(saved));
         applyOptions();
       }
 
@@ -1348,12 +1432,238 @@
         }, 1600);
       }
 
+      // Every scheme keeps its own squares, layout and options. The open one is mirrored into the
+      // library on each save, so switching away and back always returns to exactly where you left it.
+      const schemesKey = 'color-squares-schemes-v1';
+      const schemeButton = document.querySelector('#scheme-button');
+      const schemeButtonName = document.querySelector('#scheme-button-name');
+      const schemesPanel = document.querySelector('#schemes-panel');
+      const schemeNameInput = document.querySelector('#scheme-name');
+      const schemeList = document.querySelector('#scheme-list');
+      const schemeFileInput = document.querySelector('#scheme-file');
+      const schemesStatus = document.querySelector('#schemes-status');
+      let schemeLibrary = null;
+      let statusTimer = 0;
+
+      const newSchemeId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      const activeScheme = () => schemeLibrary.schemes.find((scheme) => scheme.id === schemeLibrary.activeId);
+
+      function uniqueSchemeName(base) {
+        const taken = new Set(schemeLibrary.schemes.map((scheme) => scheme.name));
+        if (!taken.has(base)) return base;
+        let number = 2;
+        while (taken.has(`${base} (${number})`)) number += 1;
+        return `${base} (${number})`;
+      }
+
+      function sanitizeScheme(scheme, fallbackName) {
+        return {
+          id: typeof scheme?.id === 'string' ? scheme.id : newSchemeId(),
+          name: typeof scheme?.name === 'string' && scheme.name.trim() ? scheme.name.slice(0, 80) : fallbackName,
+          squares: sanitizeSquares(scheme?.squares) ?? sanitizeSquares([{ color: colors[0] }, { color: colors[1] }]),
+          layout: scheme?.layout && typeof scheme.layout === 'object' ? scheme.layout : null,
+          options: sanitizeOptions(scheme?.options)
+        };
+      }
+
+      function saveLibrary() {
+        try { localStorage.setItem(schemesKey, JSON.stringify(schemeLibrary)); } catch (_) {}
+      }
+
+      function readLibrary() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(schemesKey));
+          if (!Array.isArray(saved?.schemes) || !saved.schemes.length) return null;
+          const schemes = saved.schemes.map((scheme, index) => sanitizeScheme(scheme, `Scheme ${index + 1}`));
+          const activeId = schemes.some((scheme) => scheme.id === saved.activeId) ? saved.activeId : schemes[0].id;
+          return { activeId, schemes };
+        } catch (_) { return null; }
+      }
+
+      function saveActiveScheme() {
+        const scheme = schemeLibrary && activeScheme();
+        if (!scheme) return;
+        Object.assign(scheme, { squares: currentSquares(), layout: currentLayout(), options: { ...options } });
+        saveLibrary();
+        if (!schemesPanel.hidden) renderSchemeList();
+      }
+
+      // Puts a scheme on the page and into the working storage keys, without touching the library's other schemes.
+      function showScheme(scheme) {
+        render(scheme.squares, scheme.layout);
+        Object.assign(options, sanitizeOptions(scheme.options));
+        applyOptions();
+        saveState();
+        saveOptions();
+        renderSchemeList();
+      }
+
+      function switchScheme(id) {
+        if (id === schemeLibrary.activeId) return;
+        saveActiveScheme();
+        schemeLibrary.activeId = id;
+        showScheme(activeScheme());
+      }
+
+      function addScheme(scheme) {
+        saveActiveScheme();
+        schemeLibrary.schemes.push(scheme);
+        schemeLibrary.activeId = scheme.id;
+        showScheme(scheme);
+      }
+
+      function deleteScheme(id) {
+        const index = schemeLibrary.schemes.findIndex((scheme) => scheme.id === id);
+        if (index < 0 || schemeLibrary.schemes.length < 2) return;
+        const scheme = schemeLibrary.schemes[index];
+        if (!window.confirm(`Delete “${scheme.name}”? This can’t be undone.`)) return;
+        schemeLibrary.schemes.splice(index, 1);
+        if (id === schemeLibrary.activeId) {
+          schemeLibrary.activeId = schemeLibrary.schemes[Math.min(index, schemeLibrary.schemes.length - 1)].id;
+          showScheme(activeScheme());
+        } else {
+          saveLibrary();
+          renderSchemeList();
+        }
+        schemeList.querySelector('.scheme-open')?.focus();
+      }
+
+      function renderSchemeList() {
+        const current = activeScheme();
+        schemeButtonName.textContent = current.name;
+        schemeButton.setAttribute('aria-label', `Color scheme: ${current.name}. Switch scheme`);
+        if (document.activeElement !== schemeNameInput) schemeNameInput.value = current.name;
+        const onlyOne = schemeLibrary.schemes.length < 2;
+        schemeList.replaceChildren(...schemeLibrary.schemes.map((scheme) => {
+          const item = document.createElement('li');
+          const open = document.createElement('button');
+          const name = document.createElement('span');
+          const strip = document.createElement('span');
+          const remove = document.createElement('button');
+          const active = scheme.id === schemeLibrary.activeId;
+          item.className = `scheme-item${active ? ' is-active' : ''}`;
+          open.className = 'scheme-open';
+          open.type = 'button';
+          if (active) open.setAttribute('aria-current', 'true');
+          open.addEventListener('click', () => switchScheme(scheme.id));
+          name.className = 'scheme-open-name';
+          name.textContent = scheme.name;
+          strip.className = 'scheme-strip';
+          strip.setAttribute('aria-hidden', 'true');
+          strip.append(...scheme.squares.map(({ color }) => {
+            const chip = document.createElement('span');
+            chip.style.setProperty('--strip-color', color);
+            return chip;
+          }));
+          open.append(name, strip);
+          remove.className = 'scheme-delete';
+          remove.type = 'button';
+          remove.textContent = '×';
+          remove.hidden = onlyOne;
+          remove.setAttribute('aria-label', `Delete ${scheme.name}`);
+          remove.title = 'Delete scheme';
+          remove.addEventListener('click', () => deleteScheme(scheme.id));
+          item.append(open, remove);
+          return item;
+        }));
+      }
+
+      function showSchemesStatus(message) {
+        schemesStatus.textContent = message;
+        window.clearTimeout(statusTimer);
+        statusTimer = window.setTimeout(() => { schemesStatus.textContent = ''; }, 3000);
+      }
+
+      function setSchemesOpen(open, restoreFocus = false) {
+        schemesPanel.hidden = !open;
+        schemeButton.setAttribute('aria-expanded', String(open));
+        if (open) {
+          if (activeSquare) closePicker();
+          if (!optionsPanel.hidden) setOptionsOpen(false);
+          renderSchemeList();
+          schemeList.querySelector('[aria-current]')?.focus();
+        } else if (restoreFocus) schemeButton.focus();
+      }
+
+      function exportScheme() {
+        saveActiveScheme();
+        const { name, squares, layout, options: schemeOptions } = activeScheme();
+        const file = { app: 'color-squares', version: 1, name, squares, layout, options: schemeOptions };
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' }));
+        link.download = `${name.trim().replace(/[^\w\- ]+/g, '').replace(/\s+/g, '-').toLowerCase() || 'color-scheme'}.json`;
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        showSchemesStatus(`Saved “${name}” to a file.`);
+      }
+
+      async function importScheme(file) {
+        if (!file) return;
+        try {
+          const data = JSON.parse(await file.text());
+          if (!Array.isArray(data?.squares)) throw new Error('No squares in file');
+          const fallback = file.name.replace(/\.json$/i, '') || 'Imported scheme';
+          const scheme = sanitizeScheme({ ...data, id: newSchemeId() }, fallback);
+          scheme.name = uniqueSchemeName(scheme.name);
+          addScheme(scheme);
+          showSchemesStatus(`Loaded “${scheme.name}”.`);
+        } catch (_) {
+          showSchemesStatus('That file isn’t a Color Squares scheme.');
+        }
+      }
+
+      schemeButton.addEventListener('click', () => setSchemesOpen(schemesPanel.hidden));
+      document.querySelector('#schemes-close').addEventListener('click', () => setSchemesOpen(false, true));
+      schemeNameInput.addEventListener('input', () => {
+        activeScheme().name = schemeNameInput.value.slice(0, 80) || 'Untitled';
+        saveLibrary();
+        renderSchemeList();
+      });
+      schemeNameInput.addEventListener('change', () => { schemeNameInput.value = activeScheme().name; });
+      document.querySelector('#scheme-new').addEventListener('click', () => {
+        let number = schemeLibrary.schemes.length + 1;
+        while (schemeLibrary.schemes.some((scheme) => scheme.name === `Scheme ${number}`)) number += 1;
+        addScheme(sanitizeScheme({ id: newSchemeId(), options: { background: options.background } }, `Scheme ${number}`));
+        schemeNameInput.focus();
+        schemeNameInput.select();
+      });
+      document.querySelector('#scheme-duplicate').addEventListener('click', () => {
+        saveActiveScheme();
+        const copy = structuredClone(activeScheme());
+        addScheme({ ...copy, id: newSchemeId(), name: uniqueSchemeName(`${copy.name} copy`) });
+        schemeNameInput.focus();
+        schemeNameInput.select();
+      });
+      document.querySelector('#scheme-export').addEventListener('click', exportScheme);
+      document.querySelector('#scheme-import').addEventListener('click', () => schemeFileInput.click());
+      schemeFileInput.addEventListener('change', () => { importScheme(schemeFileInput.files[0]); schemeFileInput.value = ''; });
+      document.addEventListener('pointerdown', (event) => {
+        if (!schemesPanel.hidden && !schemesPanel.contains(event.target) && !schemeButton.contains(event.target)) setSchemesOpen(false);
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !schemesPanel.hidden) setSchemesOpen(false, true);
+      });
+
+      function initSchemes() {
+        schemeLibrary = readLibrary() ?? { activeId: newSchemeId(), schemes: [] };
+        if (!activeScheme()) {
+          // First visit since schemes existed: the squares already on the page become the first scheme.
+          schemeLibrary.schemes.push({ id: schemeLibrary.activeId, name: uniqueSchemeName('Scheme 1') });
+        }
+        saveActiveScheme();
+        renderSchemeList();
+      }
+
       document.querySelector('#capture-button').addEventListener('click', savePicture);
       copyPictureButton.addEventListener('click', copyPicture);
       addButton.addEventListener('click', addSquare);
       window.addEventListener('resize', () => { updateGrid(); positionPicker(); });
       window.addEventListener('scroll', positionPicker, true);
       window.addEventListener('storage', (event) => {
+        if (event.key === schemesKey) {
+          schemeLibrary = readLibrary() ?? schemeLibrary;
+          renderSchemeList();
+        }
         if (event.key === storageKey) render(loadState());
         if (event.key === optionsKey) loadOptions();
         if (event.key === layoutKey) {
@@ -1365,6 +1675,7 @@
       });
       render(loadState());
       loadOptions();
+      initSchemes();
     </script>
   </body>
 </html>
