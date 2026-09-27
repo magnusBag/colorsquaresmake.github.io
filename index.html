@@ -68,11 +68,52 @@
       .header-note { font-size: 13px; }
 
       main {
+        display: flex;
+        align-items: center;
+        justify-content: center;
         width: 100%;
         height: 100vh;
         height: 100svh;
         height: 100dvh;
       }
+
+      /* The squares' area shrinks from the middle out, so it always stays centered on the page. */
+      .grid-frame {
+        position: relative;
+        width: calc(var(--area-width, 1) * 100%);
+        height: calc(var(--area-height, 1) * 100%);
+      }
+
+      .area-handle {
+        position: absolute;
+        z-index: 3;
+        display: grid;
+        place-items: center;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        touch-action: none;
+      }
+
+      .area-handle::after {
+        content: '';
+        border-radius: 3px;
+        background: rgba(41, 40, 36, 0.55);
+        box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.7);
+        opacity: 0;
+        transition: opacity 150ms ease;
+      }
+
+      .area-handle:hover::after, .area-handle:focus-visible::after, .area-handle.is-active::after { opacity: 1; }
+      .area-handle:focus { outline: none; }
+      .area-left, .area-right { top: 0; bottom: 0; width: 8px; cursor: ew-resize; }
+      .area-left { left: 0; }
+      .area-right { right: 0; }
+      .area-top, .area-bottom { left: 0; right: 0; height: 8px; cursor: ns-resize; }
+      .area-top { top: 0; }
+      .area-bottom { bottom: 0; }
+      .area-left::after, .area-right::after { width: 5px; height: 64px; }
+      .area-top::after, .area-bottom::after { width: 64px; height: 5px; }
 
       .grid {
         display: grid;
@@ -301,7 +342,9 @@
       }
 
       @media (hover: none) {
-        .square-control { opacity: 1; pointer-events: auto; }
+        .square-control, .area-handle::after { opacity: 1; pointer-events: auto; }
+        .area-left, .area-right { width: 16px; }
+        .area-top, .area-bottom { height: 16px; }
         .remove-button { width: 34px; height: 34px; }
       }
 
@@ -318,7 +361,13 @@
     </header>
 
     <main>
-      <div class="grid" id="grid" aria-label="Color squares"></div>
+      <div class="grid-frame" id="grid-frame">
+        <div class="grid" id="grid" aria-label="Color squares"></div>
+        <button class="area-handle area-left" data-side="left" type="button" aria-label="Resize squares area from the left edge" title="Drag to resize the area · double-click to fill the page"></button>
+        <button class="area-handle area-right" data-side="right" type="button" aria-label="Resize squares area from the right edge" title="Drag to resize the area · double-click to fill the page"></button>
+        <button class="area-handle area-top" data-side="top" type="button" aria-label="Resize squares area from the top edge" title="Drag to resize the area · double-click to fill the page"></button>
+        <button class="area-handle area-bottom" data-side="bottom" type="button" aria-label="Resize squares area from the bottom edge" title="Drag to resize the area · double-click to fill the page"></button>
+      </div>
     </main>
 
     <section class="cmyk-popover" id="cmyk-picker" role="dialog" aria-label="Color picker" hidden>
@@ -1088,7 +1137,8 @@
       const radiusValue = document.querySelector('#radius-value');
       const backgroundInput = document.querySelector('#background-input');
       const backgroundPresets = ['#f7f5f0', '#ffffff', '#e4e1da', '#292824', '#111111'];
-      const options = { gap: 0, radius: 0, background: '#f7f5f0' };
+      const options = { gap: 0, radius: 0, background: '#f7f5f0', areaWidth: 1, areaHeight: 1 };
+      const gridFrame = document.querySelector('#grid-frame');
 
       backgroundInput.before(...backgroundPresets.map((color) => {
         const swatch = document.createElement('button');
@@ -1108,6 +1158,9 @@
         grid.style.setProperty('--square-radius', `${options.radius}px`);
         radiusSlider.value = options.radius;
         radiusValue.textContent = `${options.radius} px`;
+        gridFrame.style.setProperty('--area-width', options.areaWidth);
+        gridFrame.style.setProperty('--area-height', options.areaHeight);
+        updateGrid();
         document.documentElement.style.setProperty('--page-background', options.background);
         document.querySelector('meta[name="theme-color"]').content = options.background;
         backgroundInput.value = options.background;
@@ -1126,6 +1179,8 @@
           if (Number.isFinite(saved?.gap)) options.gap = Math.max(0, Math.min(60, Math.round(saved.gap)));
           if (Number.isFinite(saved?.radius)) options.radius = Math.max(0, Math.min(80, Math.round(saved.radius)));
           if (/^#[0-9a-f]{6}$/i.test(saved?.background)) options.background = saved.background.toLowerCase();
+          if (Number.isFinite(saved?.areaWidth)) options.areaWidth = Math.max(0.05, Math.min(1, saved.areaWidth));
+          if (Number.isFinite(saved?.areaHeight)) options.areaHeight = Math.max(0.05, Math.min(1, saved.areaHeight));
         } catch (_) {}
         applyOptions();
       }
@@ -1138,6 +1193,68 @@
           gapSlider.focus();
         } else if (restoreFocus) optionsButton.focus();
       }
+
+      // Each edge moves twice as far as the pointer's share, since the opposite edge mirrors it to keep the area centered.
+      function setAreaSize(axis, pixels) {
+        const available = axis === 'x' ? gridFrame.parentElement.clientWidth : gridFrame.parentElement.clientHeight;
+        const fraction = Math.max(Math.min(1, 120 / Math.max(1, available)), Math.min(1, pixels / Math.max(1, available)));
+        if (axis === 'x') options.areaWidth = fraction;
+        else options.areaHeight = fraction;
+        applyOptions();
+      }
+
+      document.querySelectorAll('.area-handle').forEach((handle) => {
+        const side = handle.dataset.side;
+        const axis = side === 'left' || side === 'right' ? 'x' : 'y';
+        const direction = side === 'left' || side === 'top' ? -1 : 1;
+        const currentSize = () => (axis === 'x' ? gridFrame.clientWidth : gridFrame.clientHeight);
+
+        handle.addEventListener('pointerdown', (event) => {
+          if (event.button !== 0) return;
+          event.preventDefault();
+          handle.focus();
+          if (activeSquare) closePicker();
+          handle.classList.add('is-active');
+          const start = axis === 'x' ? event.clientX : event.clientY;
+          const startSize = currentSize();
+
+          function move(moveEvent) {
+            if (moveEvent.pointerId !== event.pointerId) return;
+            const delta = (axis === 'x' ? moveEvent.clientX : moveEvent.clientY) - start;
+            setAreaSize(axis, startSize + 2 * direction * delta);
+          }
+
+          function finish(endEvent) {
+            if (endEvent.pointerId !== event.pointerId) return;
+            handle.classList.remove('is-active');
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', finish);
+            window.removeEventListener('pointercancel', finish);
+            saveOptions();
+          }
+
+          window.addEventListener('pointermove', move);
+          window.addEventListener('pointerup', finish);
+          window.addEventListener('pointercancel', finish);
+        });
+
+        handle.addEventListener('keydown', (event) => {
+          const step = axis === 'x'
+            ? event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0
+            : event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
+          if (!step) return;
+          event.preventDefault();
+          setAreaSize(axis, currentSize() + 2 * direction * step * (event.shiftKey ? 64 : 16));
+          saveOptions();
+        });
+
+        handle.addEventListener('dblclick', () => {
+          if (axis === 'x') options.areaWidth = 1;
+          else options.areaHeight = 1;
+          applyOptions();
+          saveOptions();
+        });
+      });
 
       optionsButton.addEventListener('click', () => setOptionsOpen(optionsPanel.hidden));
       document.querySelector('#options-close').addEventListener('click', () => setOptionsOpen(false, true));
