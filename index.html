@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f5f0" />
+    <title>Color Squares</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Arial, Helvetica, sans-serif;
+        background: #f7f5f0;
+        color: #292824;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+      }
+
+      .site-header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 1rem;
+        padding: 32px 38px;
+        pointer-events: none;
+      }
+
+      .brand {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+
+      .header-note, .hint {
+        margin: 0;
+        color: #77736c;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+      }
+
+      main {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        min-height: 100svh;
+        padding: 110px 32px;
+      }
+
+      .grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: clamp(14px, 2.2vw, 28px);
+        width: min(100%, 880px);
+      }
+
+      .square {
+        position: relative;
+        flex: 0 0 auto;
+        width: clamp(120px, 17vw, 190px);
+        aspect-ratio: 1;
+        background: var(--square-color);
+        border-radius: 2px;
+        box-shadow: 0 12px 28px rgba(48, 43, 34, 0.09);
+        transition: transform 180ms ease, box-shadow 180ms ease;
+      }
+
+      .square:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 18px 34px rgba(48, 43, 34, 0.14);
+      }
+
+      .square:focus-within {
+        outline: 3px solid #292824;
+        outline-offset: 5px;
+      }
+
+      .square input[type="color"] {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        border: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+
+      .hint {
+        position: fixed;
+        bottom: 40px;
+        left: 38px;
+      }
+
+      .add-button {
+        position: fixed;
+        right: 32px;
+        bottom: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 62px;
+        height: 62px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: #292824;
+        color: #fff;
+        font: 300 39px/1 Arial, Helvetica, sans-serif;
+        cursor: pointer;
+        box-shadow: 0 8px 22px rgba(41, 40, 36, 0.18);
+        transition: transform 180ms ease, background 180ms ease;
+      }
+
+      .add-button:hover { transform: rotate(90deg); background: #48443d; }
+      .add-button:focus-visible { outline: 3px solid #292824; outline-offset: 4px; }
+
+      @media (max-width: 600px) {
+        .site-header { padding: 24px; }
+        .header-note { display: none; }
+        main { padding: 90px 20px 110px; }
+        .grid { gap: 14px; }
+        .square { width: min(39vw, 170px); }
+        .hint { left: 24px; bottom: 38px; max-width: 52%; line-height: 1.4; }
+        .add-button { right: 22px; bottom: 22px; width: 58px; height: 58px; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .square, .add-button { transition: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <h1 class="brand">Color Squares</h1>
+      <p class="header-note">A little space to play with color</p>
+    </header>
+
+    <main>
+      <div class="grid" id="grid" aria-label="Color squares"></div>
+    </main>
+
+    <p class="hint">Click a square to change its color</p>
+    <button class="add-button" id="add-square" type="button" aria-label="Add a square" title="Add a square">+</button>
+
+    <script>
+      const grid = document.querySelector('#grid');
+      const addButton = document.querySelector('#add-square');
+      const colors = ['#f27864', '#6769dd', '#eebd59', '#74b99b', '#cb8bbd', '#75a8cb'];
+
+      function addSquare() {
+        const number = grid.children.length + 1;
+        const color = colors[(number - 1) % colors.length];
+        const square = document.createElement('div');
+        const picker = document.createElement('input');
+
+        square.className = 'square';
+        square.style.setProperty('--square-color', color);
+        picker.type = 'color';
+        picker.value = color;
+        picker.setAttribute('aria-label', `Choose color for square ${number}`);
+        picker.addEventListener('input', () => {
+          square.style.setProperty('--square-color', picker.value);
+        });
+
+        square.append(picker);
+        grid.append(square);
+      }
+
+      addButton.addEventListener('click', addSquare);
+      addSquare();
+      addSquare();
+    </script>
+  </body>
+</html>
