@@ -5,15 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f7f5f0" />
     <title>Color Squares</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet" />
     <style>
       :root {
         color-scheme: light;
-        font-family: Arial, Helvetica, sans-serif;
-        background: #f7f5f0;
+        --font: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --ink: #292824;
+        --muted: #6f6b64;
+        --line: #e8e5df;
+        --line-strong: #c8c4bd;
+        --paper: #f7f5f0;
+        --surface: #fff;
+        --chip: rgba(255, 255, 255, 0.82);
+        font-family: var(--font);
+        --page-background: #f7f5f0;
+        background: var(--page-background);
         color: #292824;
       }
 
       * { box-sizing: border-box; }
+      button, input { font: inherit; }
 
       body {
         margin: 0;
@@ -35,26 +48,24 @@
         pointer-events: none;
       }
 
+      .brand, .header-note {
+        margin: 0;
+        padding: 7px 11px;
+        border-radius: 999px;
+        background: var(--chip);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        color: var(--ink);
+      }
+
       .brand {
-        margin: 0;
-        padding: 6px 8px;
-        border-radius: 6px;
-        background: rgba(255, 255, 255, 0.86);
-        color: #292824;
-        font-size: 13px;
-        font-weight: 800;
-        letter-spacing: 0.13em;
-        text-transform: uppercase;
+        font-size: 15px;
+        font-stretch: 125%;
+        font-weight: 750;
+        letter-spacing: -0.01em;
       }
 
-      .header-note, .hint {
-        margin: 0;
-        color: #292824;
-        font-size: 12px;
-        letter-spacing: 0.04em;
-      }
-
-      .header-note, .hint { padding: 6px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.86); }
+      .header-note { font-size: 13px; }
 
       main {
         width: 100%;
@@ -67,6 +78,7 @@
         display: grid;
         width: 100%;
         height: 100%;
+        gap: var(--square-gap, 0px);
         overflow: hidden;
       }
 
@@ -74,6 +86,8 @@
         position: relative;
         min-width: 0;
         min-height: 0;
+        container-type: size;
+        border-radius: var(--square-radius, 0px);
         background: var(--square-color);
         transition: background-color 140ms ease;
       }
@@ -95,24 +109,32 @@
         height: 100%;
         padding: 0;
         border: 0;
+        border-radius: inherit;
         outline: none;
         background: transparent;
         cursor: pointer;
         touch-action: none;
       }
 
-      .square-name {
+      /* Reads like a chip in a printer's swatch book: name over code, bottom-left. */
+      .swatch-label {
         position: absolute;
-        bottom: 12px;
-        left: 12px;
-        max-width: calc(100% - 56px);
-        overflow: hidden;
+        bottom: 14px;
+        left: 16px;
+        display: grid;
+        gap: 1px;
+        max-width: calc(100% - 32px);
         color: var(--square-label-color);
-        font-size: 12px;
-        font-weight: 700;
-        text-overflow: ellipsis;
-        white-space: nowrap;
         pointer-events: none;
+      }
+
+      .square-name, .square-hex { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .square-name { font-size: 14px; font-weight: 650; }
+      .square-name[hidden] { display: none; }
+      .square-hex { font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: 0.04em; opacity: 0.72; }
+
+      @container (max-width: 96px) or (max-height: 64px) {
+        .swatch-label { display: none; }
       }
 
       .cmyk-popover {
@@ -121,10 +143,10 @@
         width: 310px;
         max-width: calc(100vw - 32px);
         padding: 18px;
-        border: 1px solid #dedbd5;
+        border: 1px solid var(--line);
         border-radius: 14px;
-        background: #fff;
-        color: #292824;
+        background: var(--surface);
+        color: var(--ink);
         box-shadow: 0 20px 55px rgba(41, 40, 36, 0.2);
       }
 
@@ -133,46 +155,49 @@
       }
 
       @keyframes popover-in {
-        from { opacity: 0; }
-        to { opacity: 1; }
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: none; }
       }
 
       .cmyk-popover[hidden] { display: none; }
       .picker-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-      .picker-heading h2 { margin: 0; font-size: 15px; }
-      .picker-close { border: 0; background: transparent; color: #292824; font-size: 24px; line-height: 1; cursor: pointer; }
+      .picker-heading h2 { margin: 0; font-size: 16px; font-stretch: 112%; font-weight: 700; }
+      .picker-close { display: grid; place-items: center; width: 32px; height: 32px; margin: -6px -8px -6px 0; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--ink); font-size: 24px; line-height: 1; cursor: pointer; }
+      .picker-close:hover { background: var(--paper); }
+      .picker-close:focus-visible { outline: 3px solid var(--ink); outline-offset: 1px; }
       .picker-name { display: grid; gap: 6px; margin-bottom: 16px; font-size: 12px; font-weight: 700; }
-      .picker-name input { width: 100%; padding: 9px 10px; border: 1px solid #c8c4bd; border-radius: 6px; font: inherit; }
-      .picker-tabs { display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 1px solid #e8e5df; }
-      .picker-tab { padding: 8px 14px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #77736c; font: 700 12px Arial, Helvetica, sans-serif; cursor: pointer; }
-      .picker-tab[aria-selected="true"] { border-bottom-color: #292824; color: #292824; }
-      .picker-tab:focus-visible { outline: 3px solid #292824; outline-offset: 2px; }
+      .picker-name input { width: 100%; padding: 9px 10px; border: 1px solid var(--line-strong); border-radius: 6px; font: inherit; }
+      .picker-tabs { display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+      .picker-tab { padding: 8px 14px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font: 700 12px var(--font); cursor: pointer; }
+      .picker-tab[aria-selected="true"] { border-bottom-color: var(--ink); color: var(--ink); }
+      .picker-tab:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
       .channel-row { display: grid; grid-template-columns: 18px minmax(0, 1fr) 55px; align-items: center; gap: 10px; margin: 11px 0; font-size: 13px; font-weight: 700; }
-      .channel-row input[type="range"] { width: 100%; accent-color: #292824; }
-      .channel-row input[type="number"] { width: 55px; padding: 6px 4px; border: 1px solid #c8c4bd; border-radius: 5px; font: inherit; text-align: center; }
-      .picker-preview { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #e8e5df; font-size: 12px; }
+      .channel-row input[type="range"] { width: 100%; accent-color: var(--ink); }
+      .channel-row input[type="number"] { width: 55px; padding: 6px 4px; border: 1px solid var(--line-strong); border-radius: 5px; font: inherit; text-align: center; }
+      .picker-preview { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 12px; }
+      .preview-hex { font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
       .preview-swatch { width: 28px; height: 28px; border: 1px solid rgba(0,0,0,.12); border-radius: 5px; background: var(--preview-color); }
-      .copy-hex { margin-left: auto; padding: 6px 9px; border: 1px solid #dedbd5; border-radius: 6px; background: #fff; color: #292824; font: 700 11px Arial, Helvetica, sans-serif; cursor: pointer; }
-      .copy-hex:hover { background: #f7f5f0; }
-      .picker-note { margin: 10px 0 0; color: #77736c; font-size: 11px; line-height: 1.4; }
+      .copy-hex { margin-left: auto; padding: 6px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font: 700 11px var(--font); cursor: pointer; }
+      .copy-hex:hover { background: var(--paper); }
+      .picker-note { margin: 10px 0 0; color: var(--muted); font-size: 11px; line-height: 1.4; }
       .rgb-color-picker { display: grid; gap: 12px; margin-top: 8px; font-size: 12px; font-weight: 700; }
       .color-plane { position: relative; height: 170px; border-radius: 8px; background: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent), hsl(var(--picker-hue, 0deg) 100% 50%); cursor: crosshair; touch-action: none; }
       .color-plane::after { content: ''; position: absolute; left: var(--picker-saturation, 100%); top: var(--picker-value, 0%); width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px rgba(0,0,0,.55); transform: translate(-50%, -50%); pointer-events: none; }
-      .color-plane:focus-visible { outline: 3px solid #292824; outline-offset: 3px; }
+      .color-plane:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
       .hue-control { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 10px; }
-      .hue-control input { width: 100%; accent-color: #292824; }
+      .hue-control input { width: 100%; accent-color: var(--ink); }
       .shade-slider { appearance: none; display: block; width: 100%; height: 16px; margin: 12px 0 8px; border-radius: 12px; cursor: pointer; }
       .shade-slider::-moz-range-track { height: 16px; border-radius: 12px; background: transparent; }
-      .shade-slider::-webkit-slider-thumb { appearance: none; width: 22px; height: 22px; border: 3px solid #fff; border-radius: 50%; background: #292824; box-shadow: 0 0 0 1px #292824; }
-      .shade-slider::-moz-range-thumb { width: 16px; height: 16px; border: 3px solid #fff; border-radius: 50%; background: #292824; box-shadow: 0 0 0 1px #292824; }
-      .shade-slider:focus-visible { outline: 3px solid #292824; outline-offset: 4px; }
-      .shade-scale { display: flex; justify-content: space-between; color: #77736c; font-size: 11px; }
+      .shade-slider::-webkit-slider-thumb { appearance: none; width: 22px; height: 22px; border: 3px solid #fff; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+      .shade-slider::-moz-range-thumb { width: 16px; height: 16px; border: 3px solid #fff; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+      .shade-slider:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+      .shade-scale { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
       .steal-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-      .steal-button { padding: 8px 11px; border: 1px solid #dedbd5; border-radius: 6px; background: #fff; color: #292824; font: 700 12px Arial, Helvetica, sans-serif; cursor: pointer; }
-      .steal-button:hover { background: #f7f5f0; }
-      .steal-button:focus-visible { outline: 3px solid #292824; outline-offset: 2px; }
-      .steal-drop { display: grid; place-items: center; min-height: 120px; margin-top: 10px; padding: 12px; border: 2px dashed #c8c4bd; border-radius: 8px; color: #77736c; font-size: 12px; text-align: center; }
-      .steal-drop.dragging { border-color: #292824; background: #f7f5f0; }
+      .steal-button { padding: 8px 11px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font: 700 12px var(--font); cursor: pointer; }
+      .steal-button:hover { background: var(--paper); }
+      .steal-button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+      .steal-drop { display: grid; place-items: center; min-height: 120px; margin-top: 10px; padding: 12px; border: 2px dashed var(--line-strong); border-radius: 8px; color: var(--muted); font-size: 12px; text-align: center; }
+      .steal-drop.dragging { border-color: var(--ink); background: var(--paper); }
       .steal-canvas { display: block; max-width: 100%; max-height: 220px; margin: 10px auto 0; border-radius: 6px; cursor: crosshair; touch-action: none; }
 
       .square-control {
@@ -180,14 +205,14 @@
         z-index: 1;
         display: grid;
         place-items: center;
-        width: 24px;
+        width: 26px;
         height: 26px;
         padding: 0;
         border: 0;
         border-radius: 50%;
         background: rgba(41, 40, 36, 0.72);
         color: #fff;
-        font: 18px/1 Arial, Helvetica, sans-serif;
+        font: 18px/1 var(--font);
         cursor: pointer;
         opacity: 0;
         pointer-events: none;
@@ -197,23 +222,17 @@
       .square:hover .square-control,
       .square:focus-within .square-control,
       .drag-ghost .square-control { opacity: 1; pointer-events: auto; }
-      .square-control:hover { background: #292824; }
-      .square-control:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
-      .remove-button { top: 8px; right: 6px; }
+      .square-control:hover { background: var(--ink); }
+      .square-control:focus { outline: none; }
+      .remove-button { top: 8px; right: 8px; }
       .resize-handle { z-index: 2; width: 14px; height: 48px; border-radius: 8px; background: rgba(41, 40, 36, 0.42); touch-action: none; }
-      .resize-handle::after { content: ''; display: block; width: 3px; height: 24px; border-radius: 2px; background: #fff; }
+      .resize-handle::after { content: ''; display: block; width: 3px; height: 24px; border-radius: 2px; background: var(--surface); }
       .resize-left { top: 50%; left: 0; transform: translateY(-50%); cursor: ew-resize; }
       .resize-right { top: 50%; right: 0; transform: translateY(-50%); cursor: ew-resize; }
       .resize-top { top: 0; left: 50%; width: 48px; height: 14px; transform: translateX(-50%); cursor: ns-resize; }
       .resize-bottom { bottom: 0; left: 50%; width: 48px; height: 14px; transform: translateX(-50%); cursor: ns-resize; }
       .resize-top::after, .resize-bottom::after { width: 24px; height: 3px; }
       .resize-handle[hidden] { display: none; }
-
-      .hint {
-        position: fixed;
-        bottom: 40px;
-        left: 38px;
-      }
 
       .add-button {
         position: fixed;
@@ -227,26 +246,60 @@
         padding: 0;
         border: 0;
         border-radius: 50%;
-        background: #292824;
+        background: var(--ink);
         color: #fff;
-        font: 300 39px/1 Arial, Helvetica, sans-serif;
+        font: 300 39px/1 var(--font);
         cursor: pointer;
         box-shadow: 0 8px 22px rgba(41, 40, 36, 0.18);
         transition: transform 180ms ease, background 180ms ease;
       }
 
       .add-button:hover { transform: rotate(90deg); background: #48443d; }
-      .add-button:focus-visible { outline: 3px solid #292824; outline-offset: 4px; }
+      .add-button:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+
+      .options-button, .capture-button {
+        position: fixed;
+        right: 106px;
+        bottom: 37px;
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: var(--surface);
+        color: var(--ink);
+        cursor: pointer;
+        box-shadow: 0 6px 18px rgba(41, 40, 36, 0.18);
+      }
+
+      .options-button:hover, .options-button[aria-expanded="true"], .capture-button:hover { background: #f0ede7; }
+      .options-button:focus-visible, .capture-button:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+      .options-button svg, .capture-button svg { width: 20px; height: 20px; }
+      .capture-button { right: 162px; }
+      .options-popover { right: 32px; bottom: 104px; width: 260px; }
+      .options-row { display: grid; gap: 8px; margin-top: 14px; font-size: 12px; font-weight: 700; }
+      .options-row-header { display: flex; justify-content: space-between; }
+      .options-row input[type="range"] { width: 100%; accent-color: var(--ink); }
+      .background-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+      .background-swatch { width: 28px; height: 28px; padding: 0; border: 1px solid rgba(0,0,0,.18); border-radius: 50%; background: var(--swatch); cursor: pointer; }
+      .background-swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink); }
+      .background-swatch:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+      .background-custom { width: 36px; height: 30px; padding: 0 2px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); cursor: pointer; }
 
       @media (max-width: 600px) {
+        .options-button, .capture-button { right: 92px; bottom: 29px; }
+        .capture-button { right: 148px; }
+        .options-popover { right: 16px; bottom: 94px; }
         .site-header { padding: 24px; gap: 8px; }
         .header-note { display: none; }
-        .hint { left: 24px; bottom: 38px; max-width: 52%; line-height: 1.4; }
         .add-button { right: 22px; bottom: 22px; width: 58px; height: 58px; }
       }
 
       @media (hover: none) {
         .square-control { opacity: 1; pointer-events: auto; }
+        .remove-button { width: 34px; height: 34px; }
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -297,10 +350,32 @@
         <div class="steal-drop" id="steal-drop">Drop or paste an image here, then click it to steal a color.</div>
         <canvas class="steal-canvas" id="steal-canvas" aria-label="Image to pick colors from" hidden></canvas>
       </div>
-      <div class="picker-preview"><span class="preview-swatch" id="preview-swatch"></span><span id="preview-hex"></span><button class="copy-hex" id="copy-hex" type="button">Copy HEX</button></div>
+      <div class="picker-preview"><span class="preview-swatch" id="preview-swatch"></span><span class="preview-hex" id="preview-hex"></span><button class="copy-hex" id="copy-hex" type="button">Copy HEX</button></div>
     </section>
 
-    <p class="hint">Click to edit color · use the Shades tab for variations · Steal a color from your screen or an image · drag a square to move · drag an edge to resize · × to remove</p>
+    <button class="options-button" id="options-button" type="button" aria-label="Options" title="Options" aria-expanded="false" aria-controls="options-panel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+    </button>
+    <section class="cmyk-popover options-popover" id="options-panel" role="dialog" aria-label="Options" hidden>
+      <div class="picker-heading"><h2>Options</h2><button class="picker-close" id="options-close" type="button" aria-label="Close options">×</button></div>
+      <label class="options-row">
+        <span class="options-row-header">Space between squares <output id="gap-value">0 px</output></span>
+        <input id="gap-slider" type="range" min="0" max="60" step="1" value="0" />
+      </label>
+      <label class="options-row">
+        <span class="options-row-header">Corner radius <output id="radius-value">0 px</output></span>
+        <input id="radius-slider" type="range" min="0" max="80" step="1" value="0" />
+      </label>
+      <div class="options-row" role="group" aria-labelledby="background-label">
+        <span id="background-label">Background</span>
+        <div class="background-controls" id="background-controls">
+          <input class="background-custom" id="background-input" type="color" value="#f7f5f0" aria-label="Custom background color" />
+        </div>
+      </div>
+    </section>
+    <button class="capture-button" id="capture-button" type="button" aria-label="Save a picture of the squares" title="Save a picture">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+    </button>
     <button class="add-button" id="add-square" type="button" aria-label="Add a square" title="Add a square">+</button>
 
     <script>
@@ -395,6 +470,8 @@
         square.style.setProperty('--square-color', color);
         const [r, g, b] = [1, 3, 5].map((index) => parseInt(color.slice(index, index + 2), 16));
         square.style.setProperty('--square-label-color', 0.2126 * r + 0.7152 * g + 0.0722 * b > 150 ? '#292824' : '#fff');
+        const hexLabel = square.querySelector('.square-hex');
+        if (hexLabel) hexLabel.textContent = color.toUpperCase();
       }
 
       function positionPopover(squareElement, panel) {
@@ -429,7 +506,7 @@
           button.tabIndex = selected ? 0 : -1;
           document.getElementById(button.getAttribute('aria-controls')).hidden = !selected;
         });
-        if (tab.id === 'shades-tab' && activeSquare) resetShadeControls(activeSquare.dataset.color);
+        if (tab.id === 'shades-tab' && activeSquare) restoreShadeControls(activeSquare);
         positionPicker();
       }
 
@@ -437,7 +514,6 @@
         syncColorPlane(color);
         previewSwatch.style.setProperty('--preview-color', color);
         previewHex.textContent = color.toUpperCase();
-        if (activeSquare) resetShadeControls(color);
       }
 
       function syncColorPlane(color) {
@@ -485,9 +561,15 @@
       });
       hueSlider.addEventListener('input', updateColorFromPlane);
 
-      function resetShadeControls(color) {
+      // The shade origin stays fixed while sliding, so the original color is always back at the center.
+      function restoreShadeControls(square) {
+        if (!square.shadeBase) {
+          square.shadeBase = square.dataset.color;
+          square.shadeValue = 50;
+        }
+        const color = square.shadeBase;
         shadeBaseColor = color;
-        shadeSlider.value = 50;
+        shadeSlider.value = square.shadeValue;
         shadeSlider.style.background = `linear-gradient(to right, ${shadeColor(color, -0.6)}, ${color} 50%, ${shadeColor(color, 0.6)})`;
       }
 
@@ -517,6 +599,7 @@
         nameInput.value = square.dataset.name || '';
         syncCmykControls(square.cmyk);
         syncPickerColor(square.dataset.color);
+        restoreShadeControls(square);
         pickerPanel.hidden = false;
         positionPicker();
         nameInput.focus();
@@ -533,6 +616,7 @@
         if (!activeSquare) return;
         const amount = (Number(shadeSlider.value) - 50) / 50 * 0.6;
         const color = shadeColor(shadeBaseColor, amount);
+        activeSquare.shadeValue = Number(shadeSlider.value);
         activeSquare.cmyk = hexToCmyk(color);
         setSquareColor(activeSquare, color);
         previewSwatch.style.setProperty('--preview-color', color);
@@ -548,6 +632,8 @@
         const color = cmykToHex(activeSquare.cmyk);
         setSquareColor(activeSquare, color);
         syncPickerColor(color);
+        activeSquare.shadeBase = null;
+        restoreShadeControls(activeSquare);
         saveState();
       }
 
@@ -557,6 +643,8 @@
         setSquareColor(activeSquare, color);
         syncCmykControls(activeSquare.cmyk);
         syncPickerColor(color);
+        activeSquare.shadeBase = null;
+        restoreShadeControls(activeSquare);
         saveState();
       }
 
@@ -714,11 +802,20 @@
           const column = index % columnCount;
           const row = Math.floor(index / columnCount);
           const span = index === count - 1 ? columnCount - column : 1;
+          const left = column === 0;
+          const right = column + span === columnCount;
+          const top = row === 0;
+          const bottom = row === rowCount - 1;
           square.style.gridColumn = `span ${span}`;
-          square.querySelector('.resize-left').hidden = column === 0;
-          square.querySelector('.resize-right').hidden = column + span === columnCount;
-          square.querySelector('.resize-top').hidden = row === 0;
-          square.querySelector('.resize-bottom').hidden = row === rowCount - 1;
+          square.querySelector('.resize-left').hidden = left;
+          square.querySelector('.resize-right').hidden = right;
+          square.querySelector('.resize-top').hidden = top;
+          square.querySelector('.resize-bottom').hidden = bottom;
+          // Round only corners facing other squares; corners on the grid's outer edge stay square.
+          const corner = (outer) => (outer ? '0' : 'var(--square-radius, 0px)');
+          square.style.borderRadius = [
+            corner(top || left), corner(top || right), corner(bottom || right), corner(bottom || left)
+          ].join(' ');
         });
       }
 
@@ -884,7 +981,9 @@
       function createSquare(color, cmyk = hexToCmyk(color), name = '') {
         const square = document.createElement('div');
         const picker = document.createElement('button');
+        const swatchLabel = document.createElement('span');
         const nameLabel = document.createElement('span');
+        const hexLabel = document.createElement('span');
         const removeButton = document.createElement('button');
         const resizeHandles = ['left', 'right', 'top', 'bottom'].map((side) => {
           const button = document.createElement('button');
@@ -929,6 +1028,10 @@
         nameLabel.className = 'square-name';
         nameLabel.textContent = name;
         nameLabel.hidden = !name;
+        hexLabel.className = 'square-hex';
+        hexLabel.textContent = color.toUpperCase();
+        swatchLabel.className = 'swatch-label';
+        swatchLabel.append(nameLabel, hexLabel);
 
         removeButton.className = 'square-control remove-button';
         removeButton.type = 'button';
@@ -947,7 +1050,7 @@
           nextFocus.focus();
         });
 
-        square.append(picker, nameLabel, removeButton, ...resizeHandles);
+        square.append(picker, swatchLabel, removeButton, ...resizeHandles);
         grid.append(square);
       }
 
@@ -970,11 +1073,142 @@
         updateLabels();
       }
 
+      const optionsKey = 'color-squares-options-v1';
+      const optionsButton = document.querySelector('#options-button');
+      const optionsPanel = document.querySelector('#options-panel');
+      const gapSlider = document.querySelector('#gap-slider');
+      const gapValue = document.querySelector('#gap-value');
+      const radiusSlider = document.querySelector('#radius-slider');
+      const radiusValue = document.querySelector('#radius-value');
+      const backgroundInput = document.querySelector('#background-input');
+      const backgroundPresets = ['#f7f5f0', '#ffffff', '#e4e1da', '#292824', '#111111'];
+      const options = { gap: 0, radius: 0, background: '#f7f5f0' };
+
+      backgroundInput.before(...backgroundPresets.map((color) => {
+        const swatch = document.createElement('button');
+        swatch.className = 'background-swatch';
+        swatch.type = 'button';
+        swatch.dataset.color = color;
+        swatch.style.setProperty('--swatch', color);
+        swatch.setAttribute('aria-label', `Background ${color.toUpperCase()}`);
+        swatch.addEventListener('click', () => { options.background = color; applyOptions(); saveOptions(); });
+        return swatch;
+      }));
+
+      function applyOptions() {
+        grid.style.setProperty('--square-gap', `${options.gap}px`);
+        gapSlider.value = options.gap;
+        gapValue.textContent = `${options.gap} px`;
+        grid.style.setProperty('--square-radius', `${options.radius}px`);
+        radiusSlider.value = options.radius;
+        radiusValue.textContent = `${options.radius} px`;
+        document.documentElement.style.setProperty('--page-background', options.background);
+        document.querySelector('meta[name="theme-color"]').content = options.background;
+        backgroundInput.value = options.background;
+        document.querySelectorAll('.background-swatch').forEach((swatch) =>
+          swatch.setAttribute('aria-pressed', String(swatch.dataset.color === options.background)));
+        positionPicker();
+      }
+
+      function saveOptions() {
+        try { localStorage.setItem(optionsKey, JSON.stringify(options)); } catch (_) {}
+      }
+
+      function loadOptions() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(optionsKey));
+          if (Number.isFinite(saved?.gap)) options.gap = Math.max(0, Math.min(60, Math.round(saved.gap)));
+          if (Number.isFinite(saved?.radius)) options.radius = Math.max(0, Math.min(80, Math.round(saved.radius)));
+          if (/^#[0-9a-f]{6}$/i.test(saved?.background)) options.background = saved.background.toLowerCase();
+        } catch (_) {}
+        applyOptions();
+      }
+
+      function setOptionsOpen(open, restoreFocus = false) {
+        optionsPanel.hidden = !open;
+        optionsButton.setAttribute('aria-expanded', String(open));
+        if (open) {
+          if (activeSquare) closePicker();
+          gapSlider.focus();
+        } else if (restoreFocus) optionsButton.focus();
+      }
+
+      optionsButton.addEventListener('click', () => setOptionsOpen(optionsPanel.hidden));
+      document.querySelector('#options-close').addEventListener('click', () => setOptionsOpen(false, true));
+      gapSlider.addEventListener('input', () => { options.gap = Number(gapSlider.value); applyOptions(); saveOptions(); });
+      radiusSlider.addEventListener('input', () => { options.radius = Number(radiusSlider.value); applyOptions(); saveOptions(); });
+      backgroundInput.addEventListener('input', () => { options.background = backgroundInput.value; applyOptions(); saveOptions(); });
+      document.addEventListener('pointerdown', (event) => {
+        if (!optionsPanel.hidden && !optionsPanel.contains(event.target) && !optionsButton.contains(event.target)) setOptionsOpen(false);
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !optionsPanel.hidden) setOptionsOpen(false, true);
+      });
+
+      // Copies the on-screen name and hex label, using the rendered positions and fonts.
+      function drawSwatchLabel(context, square, bounds) {
+        const label = square.querySelector('.swatch-label');
+        if (getComputedStyle(label).display === 'none') return;
+        // Keep the same inset on the right as on the left, like the label's max-width does.
+        const squareRect = square.getBoundingClientRect();
+        const maxRight = squareRect.right - (label.getBoundingClientRect().left - squareRect.left) - bounds.left;
+        label.querySelectorAll('.square-name:not([hidden]), .square-hex').forEach((text) => {
+          const rect = text.getBoundingClientRect();
+          const style = getComputedStyle(text);
+          const x = rect.left - bounds.left;
+          context.save();
+          context.beginPath();
+          context.rect(x, rect.top - bounds.top, Math.max(0, maxRight - x), rect.height);
+          context.clip();
+          context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+          if ('letterSpacing' in context) context.letterSpacing = style.letterSpacing === 'normal' ? '0px' : style.letterSpacing;
+          context.globalAlpha = Number(style.opacity);
+          context.fillStyle = style.color;
+          context.textBaseline = 'middle';
+          context.fillText(text.textContent, x, rect.top - bounds.top + rect.height / 2);
+          context.restore();
+        });
+      }
+
+      // Paints the squares straight onto a canvas, so handles and buttons never end up in the picture.
+      function capturePicture() {
+        const bounds = grid.getBoundingClientRect();
+        const scale = Math.max(2, window.devicePixelRatio || 1);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(bounds.width * scale);
+        canvas.height = Math.round(bounds.height * scale);
+        const context = canvas.getContext('2d');
+        context.scale(scale, scale);
+        context.fillStyle = options.background;
+        context.fillRect(0, 0, bounds.width, bounds.height);
+        [...grid.children].forEach((square) => {
+          const rect = square.getBoundingClientRect();
+          const style = getComputedStyle(square);
+          const radii = ['borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomRightRadius', 'borderBottomLeftRadius']
+            .map((corner) => parseFloat(style[corner]) || 0);
+          context.fillStyle = square.dataset.color;
+          context.beginPath();
+          if (context.roundRect) context.roundRect(rect.left - bounds.left, rect.top - bounds.top, rect.width, rect.height, radii);
+          else context.rect(rect.left - bounds.left, rect.top - bounds.top, rect.width, rect.height);
+          context.fill();
+          drawSwatchLabel(context, square, bounds);
+        });
+        canvas.toBlob((blob) => {
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = 'color-squares.png';
+          link.click();
+          window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        }, 'image/png');
+      }
+
+      document.querySelector('#capture-button').addEventListener('click', capturePicture);
       addButton.addEventListener('click', addSquare);
       window.addEventListener('resize', () => { updateGrid(); positionPicker(); });
       window.addEventListener('scroll', positionPicker, true);
       window.addEventListener('storage', (event) => {
         if (event.key === storageKey) render(loadState());
+        if (event.key === optionsKey) loadOptions();
         if (event.key === layoutKey) {
           layoutColumns = [];
           layoutRows = [];
@@ -983,6 +1217,7 @@
         }
       });
       render(loadState());
+      loadOptions();
     </script>
   </body>
 </html>
